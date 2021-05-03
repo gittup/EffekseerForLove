@@ -13,7 +13,7 @@ public:
 
 	bool exists();
 
-//	void draw(Graphics *gfx, const Matrix4 &m);
+	void draw();
 private:
 	::Effekseer::Handle handle;
 

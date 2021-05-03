@@ -23,6 +23,8 @@ int w_newEffect(lua_State *L)
 	LUA_TRYWRAP(effect = new Effect(manager, filename););
 	Effect **dat = (Effect**)lua_newuserdata(L, sizeof(Effect*));
 	*dat = effect;
+	luaL_getmetatable(L, "Effect");
+	lua_setmetatable(L, -2);
 	return 1;
 }
 

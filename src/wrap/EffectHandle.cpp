@@ -19,14 +19,14 @@ bool EffectHandle::exists()
 	return manager->getManager()->Exists(handle);
 }
 
-	/*
-void EffectHandle::draw(Graphics *gfx, const Matrix4 &m)
+void EffectHandle::draw()
 {
 	GLint prog;
 	glGetIntegerv(GL_CURRENT_PROGRAM, &prog);
-	gfx->flushStreamDraws();
 
-	manager->setProjection(gfx);
+	manager->setProjection();
+#if 0
+	gfx->flushStreamDraws();
 
 	Matrix4 t(gfx->getTransform(), m);
 	int i, j;
@@ -39,12 +39,15 @@ void EffectHandle::draw(Graphics *gfx, const Matrix4 &m)
 			matrix.Values[i][j] = e[i*4 + j];
 		}
 	}
+#endif
 
 	::EffekseerRendererGL::Renderer *renderer = manager->getRenderer();
+//	renderer->SetCameraMatrix(matrix);
+	::Effekseer::Matrix44 matrix;
 	renderer->SetCameraMatrix(matrix);
 
 	renderer->BeginRendering();
 	manager->getManager()->DrawHandle(handle);
 	renderer->EndRendering();
 	glUseProgram(prog); // TODO Effekseer changes the glUseProgram to something else, so we need to restore it, otherwise everything done in love.draw() doesn't show up.
-}*/
+}

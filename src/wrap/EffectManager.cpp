@@ -43,9 +43,9 @@ void lua_prep(const char *funcname)
 	lua_getfield(L, -1, "loaded");
 	lua_remove(L, -2); // remove package
 
+	char buf[256] = {0};
 	const char *p = funcname;
 	while(p) {
-		char buf[256];
 		const char *dot = strchr(p, '.');
 		if(dot) {
 			memcpy(buf, p, dot-p);
@@ -260,11 +260,22 @@ void EffectManager::update(float dt)
 	}
 }
 
-#if 0
-void EffectManager::setProjection(Graphics *gfx)
+void EffectManager::setProjection()
 {
-	float windowWidth = (float)gfx->getWidth();
-	float windowHeight = (float)gfx->getHeight();
+	lua_prep("love.graphics");
+
+	lua_getfield(L, -1, "getWidth");
+	lua_call(L, 0, 1);
+	float windowWidth = lua_tonumber(L, -1);
+	lua_pop(L, 1);
+
+	lua_getfield(L, -1, "getHeight");
+	lua_call(L, 0, 1);
+	float windowHeight = lua_tonumber(L, -1);
+	lua_pop(L, 1);
+
+	lua_pop(L, 1);
+
 	::Effekseer::Matrix44 proj = ::Effekseer::Matrix44().OrthographicRH((float)windowWidth, (float)windowHeight, -128.0, 128.0);
 
 	// Invert y axis
@@ -277,6 +288,7 @@ void EffectManager::setProjection(Graphics *gfx)
 	renderer->SetProjectionMatrix(proj);
 }
 
+#if 0
 void EffectManager::draw(Graphics *gfx, const Matrix4 &m)
 {
 	GLint prog;

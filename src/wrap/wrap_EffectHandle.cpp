@@ -2,8 +2,15 @@
 
 int w_EffectHandle_exists(lua_State *L)
 {
-	EffectHandle *handle = (EffectHandle*)luaL_checkudata(L, 1, "EffectHandle");
+	EffectHandle *handle = *(EffectHandle**)luaL_checkudata(L, 1, "EffectHandle");
 	lua_pushboolean(L, handle->exists());
+	return 1;
+}
+
+int w_EffectHandle_draw(lua_State *L)
+{
+	EffectHandle *handle = *(EffectHandle**)luaL_checkudata(L, 1, "EffectHandle");
+	handle->draw();
 	return 1;
 }
 
@@ -17,13 +24,14 @@ int w_EffectHandle_gc(lua_State *L)
 
 int w_EffectHandle_tostring(lua_State *L)
 {
-	EffectHandle *manager = (EffectHandle*)luaL_checkudata(L, 1, "EffectHandle");
+	EffectHandle *manager = *(EffectHandle**)luaL_checkudata(L, 1, "EffectHandle");
 	lua_pushfstring(L, "EffectHandle: %p", manager);
 	return 1;
 }
 
 const luaL_Reg w_EffectHandle_functions[] = {
 	{ "exists", w_EffectHandle_exists },
+	{ "draw", w_EffectHandle_draw },
 };
 
 extern "C" int luaopen_effecthandle(lua_State *L)

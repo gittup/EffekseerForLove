@@ -22,7 +22,7 @@ public:
 	::Effekseer::Manager *getManager();
 	::EffekseerRendererGL::Renderer *getRenderer();
 
-//	void setProjection(Graphics *gfx);
+	void setProjection();
 
 	void update(float dt);
 
