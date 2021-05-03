@@ -288,15 +288,15 @@ void EffectManager::setProjection()
 	renderer->SetProjectionMatrix(proj);
 }
 
-#if 0
-void EffectManager::draw(Graphics *gfx, const Matrix4 &m)
+void EffectManager::draw()
 {
 	GLint prog;
 	glGetIntegerv(GL_CURRENT_PROGRAM, &prog);
-	gfx->flushStreamDraws();
+//	gfx->flushStreamDraws();
 
-	setProjection(gfx);
+	setProjection();
 
+#if 0
 	// TODO: Inverse of this?
 	Matrix4 t(gfx->getTransform(), m);
 	int i, j;
@@ -311,10 +311,12 @@ void EffectManager::draw(Graphics *gfx, const Matrix4 &m)
 	}
 
 	renderer->SetCameraMatrix(matrix);
+#endif
+	::Effekseer::Matrix44 matrix;
+	renderer->SetCameraMatrix(matrix);
 
 	renderer->BeginRendering();
 	manager->Draw();
 	renderer->EndRendering();
 	glUseProgram(prog); // TODO Effekseer changes the glUseProgram to something else, so we need to restore it, otherwise everything done in love.draw() doesn't show up.
 }
-#endif

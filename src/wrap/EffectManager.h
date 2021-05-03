@@ -26,7 +26,7 @@ public:
 
 	void update(float dt);
 
-//	void draw(Graphics *gfx, const Matrix4 &m);
+	void draw();
 
 private:
 	::EffekseerRendererGL::Renderer *renderer;

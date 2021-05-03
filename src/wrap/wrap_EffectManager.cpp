@@ -79,11 +79,19 @@ int w_EffectManager_update(lua_State *L)
 	return 0;
 }
 
+int w_EffectManager_draw(lua_State *L)
+{
+	EffectManager *manager = *(EffectManager**)luaL_checkudata(L, 1, "EffectManager");
+	LUA_TRYWRAP(manager->draw(););
+	return 0;
+}
+
 const luaL_Reg w_EffectManager_functions[] = {
 	{ "play", w_EffectManager_play },
 	{ "stop", w_EffectManager_stop },
 	{ "stopAll", w_EffectManager_stopAll },
 	{ "update", w_EffectManager_update },
+	{ "draw", w_EffectManager_draw },
 };
 
 extern "C" int luaopen_effectmanager(lua_State *L)
