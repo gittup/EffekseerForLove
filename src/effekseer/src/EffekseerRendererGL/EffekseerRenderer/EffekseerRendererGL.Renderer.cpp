@@ -1272,7 +1272,7 @@ void RendererImplemented::EndShader(Shader* shader)
 	{
 		if (m_currentVertexArray->GetVertexBuffer() == nullptr)
 		{
-			shader->DisableAttribs();
+//			shader->DisableAttribs();
 			GLCheckError();
 
 			GLExt::glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
@@ -1288,7 +1288,7 @@ void RendererImplemented::EndShader(Shader* shader)
 	}
 	else
 	{
-		shader->DisableAttribs();
+//		shader->DisableAttribs();
 		GLCheckError();
 
 		GLExt::glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
