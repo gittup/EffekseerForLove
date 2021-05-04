@@ -248,6 +248,11 @@ void EffectManager::stopAll()
 	return this->renderer;
 }
 
+void EffectManager::setLocation(EffectHandle *handle, float x, float y, float z)
+{
+	this->manager->SetLocation(handle->getHandle(), x, y, z);
+}
+
 void EffectManager::update(float dt)
 {
 	/* Effekseer's manager update is in frames, which is 60fps. Only call
@@ -262,6 +267,7 @@ void EffectManager::update(float dt)
 
 void EffectManager::setProjection()
 {
+	flushStreamDraws();
 	lua_prep("love.graphics");
 
 	lua_getfield(L, -1, "getWidth");
@@ -286,34 +292,36 @@ void EffectManager::setProjection()
 	proj.Values[3][1] = 1;
 
 	renderer->SetProjectionMatrix(proj);
+
+	::Effekseer::Matrix44 matrix;
+	renderer->SetCameraMatrix(matrix);
+}
+
+void EffectManager::flushStreamDraws()
+{
+	/* Calling setColorMask is a pretty simple way to get LOVE to call
+	 * flushStreamDraws(), which is necessary to get the effects shown in
+	 * the right order. Otherwise something like this will draw the effects
+	 * behind both images rather than on top of the first one.
+	 *
+	 * love.graphics.draw(someimg1)
+	 * manager:draw()
+	 * love.graphics.draw(someimg2)
+	 */
+	lua_prep("love.graphics.setColorMask");
+	lua_pushboolean(L, true);
+	lua_pushboolean(L, true);
+	lua_pushboolean(L, true);
+	lua_pushboolean(L, true);
+	lua_call(L, 4, 0);
 }
 
 void EffectManager::draw()
 {
 	GLint prog;
 	glGetIntegerv(GL_CURRENT_PROGRAM, &prog);
-//	gfx->flushStreamDraws();
 
 	setProjection();
-
-#if 0
-	// TODO: Inverse of this?
-	Matrix4 t(gfx->getTransform(), m);
-	int i, j;
-	const float *e = t.getElements();
-	::Effekseer::Matrix44 matrix;
-
-	// Convert Love matrix to Effekseer matrix
-	for(j=0; j<4; j++) {
-		for(i=0; i<4; i++) {
-			matrix.Values[i][j] = e[i*4 + j];
-		}
-	}
-
-	renderer->SetCameraMatrix(matrix);
-#endif
-	::Effekseer::Matrix44 matrix;
-	renderer->SetCameraMatrix(matrix);
 
 	renderer->BeginRendering();
 	manager->Draw();

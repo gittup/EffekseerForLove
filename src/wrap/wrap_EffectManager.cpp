@@ -71,6 +71,17 @@ int w_EffectManager_stopAll(lua_State *L)
 	return 0;
 }
 
+int w_EffectManager_setLocation(lua_State *L)
+{
+	EffectManager *manager = *(EffectManager**)luaL_checkudata(L, 1, "EffectManager");
+	EffectHandle *handle = *(EffectHandle**)luaL_checkudata(L, 2, "EffectHandle");
+	float x = luaL_checknumber(L, 3);
+	float y = luaL_checknumber(L, 4);
+	float z = luaL_checknumber(L, 5);
+	LUA_TRYWRAP(manager->setLocation(handle, x, y, z););
+	return 0;
+}
+
 int w_EffectManager_update(lua_State *L)
 {
 	EffectManager *manager = *(EffectManager**)luaL_checkudata(L, 1, "EffectManager");
@@ -90,6 +101,7 @@ const luaL_Reg w_EffectManager_functions[] = {
 	{ "play", w_EffectManager_play },
 	{ "stop", w_EffectManager_stop },
 	{ "stopAll", w_EffectManager_stopAll },
+	{ "setLocation", w_EffectManager_setLocation },
 	{ "update", w_EffectManager_update },
 	{ "draw", w_EffectManager_draw },
 };
