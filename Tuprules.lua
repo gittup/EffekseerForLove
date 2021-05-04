@@ -6,6 +6,7 @@ CFLAGS += '-I' .. EFFEKSEER_PLUGIN .. '/src/effekseer/src/include/'
 CFLAGS += '-I' .. EFFEKSEER_PLUGIN .. '/src/effekseer/src/Effekseer/'
 CFLAGS += '-fPIC'
 CFLAGS += '-g'
+CFLAGS += '-O2'
 
 LDFLAGS += '`pkg-config luajit --libs`'
 LDFLAGS += '-fPIC'
