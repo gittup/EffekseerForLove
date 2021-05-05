@@ -1,6 +1,5 @@
 #include "EffectManager.h"
 #include "Effect.h"
-#include "EffectHandle.h"
 
 #include "Effekseer.h"
 #include "EffekseerRendererGL.h"
@@ -220,17 +219,17 @@ EffectManager::EffectManager()
 	updateCounter = 0.0f;
 }
 
-EffectHandle *EffectManager::play(Effect *effect)
+::Effekseer::Handle EffectManager::play(Effect *effect)
 {
-	EffectHandle *handle = new EffectHandle(manager->Play(effect->getEffect(), ::Effekseer::Vector3D(0, 0, 0)), this);
+	::Effekseer::Handle handle = manager->Play(effect->getEffect(), ::Effekseer::Vector3D(0, 0, 0));
 	// Scale x/y to make effects large enough to be seen, inverting y axis
-	manager->SetScale(handle->getHandle(), 10.0, -10.0, 1.0);
+	manager->SetScale(handle, 10.0, -10.0, 1.0);
 	return handle;
 }
 
-void EffectManager::stop(EffectHandle *handle)
+void EffectManager::stop(::Effekseer::Handle handle)
 {
-	manager->StopEffect(handle->getHandle());
+	manager->StopEffect(handle);
 }
 
 void EffectManager::stopAll()
@@ -248,9 +247,9 @@ void EffectManager::stopAll()
 	return this->renderer;
 }
 
-void EffectManager::setLocation(EffectHandle *handle, float x, float y, float z)
+void EffectManager::setLocation(::Effekseer::Handle handle, float x, float y, float z)
 {
-	this->manager->SetLocation(handle->getHandle(), x, y, z);
+	this->manager->SetLocation(handle, x, y, z);
 }
 
 void EffectManager::update(float dt)

@@ -5,7 +5,6 @@ extern "C" {
 
 #include "wrap_EffectManager.h"
 #include "wrap_Effect.h"
-#include "wrap_EffectHandle.h"
 #include <string>
 
 lua_State *L;
@@ -40,8 +39,6 @@ extern "C" int luaopen_effekseer(lua_State *newL)
 	if(luaopen_effectmanager(L) < 0)
 		return 0;
 	if(luaopen_effect(L) < 0)
-		return 0;
-	if(luaopen_effecthandle(L) < 0)
 		return 0;
 	printf("OHIA: Lua state: %p\n", L);
 

@@ -6,20 +6,19 @@
 #include "runtime.h"
 
 class Effect;
-class EffectHandle;
 
 class EffectManager
 {
 public:
 	EffectManager();
 
-	EffectHandle *play(Effect *effect);
+	::Effekseer::Handle play(Effect *effect);
 
-	void stop(EffectHandle *handle);
+	void stop(::Effekseer::Handle handle);
 
 	void stopAll();
 
-	void setLocation(EffectHandle *handle, float x, float y, float z);
+	void setLocation(::Effekseer::Handle handle, float x, float y, float z);
 
 	::Effekseer::Manager *getManager();
 	::EffekseerRendererGL::Renderer *getRenderer();

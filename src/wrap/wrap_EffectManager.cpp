@@ -1,7 +1,5 @@
 #include "EffectManager.h"
 #include "Effect.h"
-#include "EffectHandle.h"
-#include "wrap_EffectHandle.h"
 #include "runtime.h"
 
 int w_EffectManager_gc(lua_State *L)
@@ -23,19 +21,16 @@ int w_EffectManager_play(lua_State *L)
 {
 	EffectManager *manager = *(EffectManager**)luaL_checkudata(L, 1, "EffectManager");
 	Effect *effect = *(Effect**)luaL_checkudata(L, 2, "Effect");
-	EffectHandle *handle = nullptr;
+	::Effekseer::Handle handle = 0;
 	LUA_TRYWRAP(handle = manager->play(effect););
-	EffectHandle **dat = (EffectHandle**)lua_newuserdata(L, sizeof(EffectHandle*));
-	*dat = handle;
-	luaL_getmetatable(L, "EffectHandle");
-	lua_setmetatable(L, -2);
+	lua_pushinteger(L, handle);
 	return 1;
 }
 
 int w_EffectManager_stop(lua_State *L)
 {
 	EffectManager *manager = *(EffectManager**)luaL_checkudata(L, 1, "EffectManager");
-	EffectHandle *handle = *(EffectHandle**)luaL_checkudata(L, 2, "EffectHandle");
+	::Effekseer::Handle handle = luaL_checkinteger(L, 2);
 	LUA_TRYWRAP(manager->stop(handle););
 	return 0;
 }
@@ -47,10 +42,20 @@ int w_EffectManager_stopAll(lua_State *L)
 	return 0;
 }
 
+int w_EffectManager_exists(lua_State *L)
+{
+	EffectManager *manager = *(EffectManager**)luaL_checkudata(L, 1, "EffectManager");
+	::Effekseer::Handle handle = luaL_checkinteger(L, 2);
+	bool exists = false;
+	LUA_TRYWRAP(exists = manager->getManager()->Exists(handle););
+	lua_pushboolean(L, exists);
+	return 1;
+}
+
 int w_EffectManager_setLocation(lua_State *L)
 {
 	EffectManager *manager = *(EffectManager**)luaL_checkudata(L, 1, "EffectManager");
-	EffectHandle *handle = *(EffectHandle**)luaL_checkudata(L, 2, "EffectHandle");
+	::Effekseer::Handle handle = luaL_checkinteger(L, 2);
 	float x = luaL_checknumber(L, 3);
 	float y = luaL_checknumber(L, 4);
 	float z = luaL_checknumber(L, 5);
@@ -77,6 +82,7 @@ const luaL_Reg w_EffectManager_functions[] = {
 	{ "play", w_EffectManager_play },
 	{ "stop", w_EffectManager_stop },
 	{ "stopAll", w_EffectManager_stopAll },
+	{ "exists", w_EffectManager_exists },
 	{ "setLocation", w_EffectManager_setLocation },
 	{ "update", w_EffectManager_update },
 	{ "draw", w_EffectManager_draw },
