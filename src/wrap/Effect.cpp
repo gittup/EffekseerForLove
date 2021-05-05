@@ -3,6 +3,7 @@
 
 #include "Effekseer.h"
 #include "EffekseerRendererGL.h"
+#include <string>
 
 Effect::Effect(EffectManager *manager, std::string &filename)
 {

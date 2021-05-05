@@ -194,7 +194,7 @@ public:
 
 EffectManager::EffectManager()
 {
-#ifdef LOVE_EMSCRIPTEN
+#ifdef EMSCRIPTEN
 	renderer = ::EffekseerRendererGL::Renderer::Create(8000, EffekseerRendererGL::OpenGLDeviceType::Emscripten);
 #else
 	renderer = ::EffekseerRendererGL::Renderer::Create(8000, EffekseerRendererGL::OpenGLDeviceType::OpenGL3);
