@@ -21,7 +21,9 @@ int w_EffectManager_play(lua_State *L)
 	EffectManager *manager = *(EffectManager**)luaL_checkudata(L, 1, "EffectManager");
 	::Effekseer::Effect *effect = *(::Effekseer::Effect**)luaL_checkudata(L, 2, "Effect");
 	::Effekseer::Handle handle = 0;
-	LUA_TRYWRAP(handle = manager->play(effect););
+	LUA_TRYWRAP(handle = manager->getManager()->Play(effect, ::Effekseer::Vector3D(0, 0, 0)););
+	// Scale x/y to make effects large enough to be seen, inverting y axis
+	manager->getManager()->SetScale(handle, 10.0, -10.0, 1.0);
 	lua_pushinteger(L, handle);
 	return 1;
 }
@@ -30,14 +32,14 @@ int w_EffectManager_stop(lua_State *L)
 {
 	EffectManager *manager = *(EffectManager**)luaL_checkudata(L, 1, "EffectManager");
 	::Effekseer::Handle handle = luaL_checkinteger(L, 2);
-	LUA_TRYWRAP(manager->stop(handle););
+	LUA_TRYWRAP(manager->getManager()->StopEffect(handle););
 	return 0;
 }
 
 int w_EffectManager_stopAll(lua_State *L)
 {
 	EffectManager *manager = *(EffectManager**)luaL_checkudata(L, 1, "EffectManager");
-	LUA_TRYWRAP(manager->stopAll(););
+	LUA_TRYWRAP(manager->getManager()->StopAllEffects(););
 	return 0;
 }
 
@@ -58,7 +60,7 @@ int w_EffectManager_setLocation(lua_State *L)
 	float x = luaL_checknumber(L, 3);
 	float y = luaL_checknumber(L, 4);
 	float z = luaL_checknumber(L, 5);
-	LUA_TRYWRAP(manager->setLocation(handle, x, y, z););
+	LUA_TRYWRAP(manager->getManager()->SetLocation(handle, x, y, z););
 	return 0;
 }
 

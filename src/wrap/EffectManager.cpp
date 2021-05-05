@@ -218,24 +218,6 @@ EffectManager::EffectManager()
 	updateCounter = 0.0f;
 }
 
-::Effekseer::Handle EffectManager::play(::Effekseer::Effect *effect)
-{
-	::Effekseer::Handle handle = manager->Play(effect, ::Effekseer::Vector3D(0, 0, 0));
-	// Scale x/y to make effects large enough to be seen, inverting y axis
-	manager->SetScale(handle, 10.0, -10.0, 1.0);
-	return handle;
-}
-
-void EffectManager::stop(::Effekseer::Handle handle)
-{
-	manager->StopEffect(handle);
-}
-
-void EffectManager::stopAll()
-{
-	manager->StopAllEffects();
-}
-
 ::Effekseer::Manager *EffectManager::getManager()
 {
 	return this->manager;
@@ -244,11 +226,6 @@ void EffectManager::stopAll()
 ::EffekseerRendererGL::Renderer *EffectManager::getRenderer()
 {
 	return this->renderer;
-}
-
-void EffectManager::setLocation(::Effekseer::Handle handle, float x, float y, float z)
-{
-	this->manager->SetLocation(handle, x, y, z);
 }
 
 void EffectManager::update(float dt)

@@ -12,14 +12,6 @@ class EffectManager
 public:
 	EffectManager();
 
-	::Effekseer::Handle play(::Effekseer::Effect *effect);
-
-	void stop(::Effekseer::Handle handle);
-
-	void stopAll();
-
-	void setLocation(::Effekseer::Handle handle, float x, float y, float z);
-
 	::Effekseer::Manager *getManager();
 	::EffekseerRendererGL::Renderer *getRenderer();
 
