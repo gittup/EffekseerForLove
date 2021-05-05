@@ -20,8 +20,11 @@ int w_EffectManager_play(lua_State *L)
 {
 	EffectManager *manager = *(EffectManager**)luaL_checkudata(L, 1, "EffectManager");
 	::Effekseer::Effect *effect = *(::Effekseer::Effect**)luaL_checkudata(L, 2, "Effect");
+	float x = luaL_optnumber(L, 3, 0.0);
+	float y = luaL_optnumber(L, 4, 0.0);
+	float z = luaL_optnumber(L, 5, 0.0);
 	::Effekseer::Handle handle = 0;
-	LUA_TRYWRAP(handle = manager->getManager()->Play(effect, ::Effekseer::Vector3D(0, 0, 0)););
+	LUA_TRYWRAP(handle = manager->getManager()->Play(effect, ::Effekseer::Vector3D(x, y, z)););
 	// Scale x/y to make effects large enough to be seen, inverting y axis
 	manager->getManager()->SetScale(handle, 10.0, -10.0, 1.0);
 	lua_pushinteger(L, handle);
