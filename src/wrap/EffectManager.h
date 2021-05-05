@@ -12,7 +12,7 @@ class EffectManager
 public:
 	EffectManager();
 
-	::Effekseer::Handle play(Effect *effect);
+	::Effekseer::Handle play(::Effekseer::Effect *effect);
 
 	void stop(::Effekseer::Handle handle);
 

@@ -1,16 +1,17 @@
 #include "wrap_Effect.h"
+#include "Effekseer.h"
 
 int w_Effect_gc(lua_State *L)
 {
-	Effect **x = (Effect**)luaL_checkudata(L, 1, "Effect");
-	delete *x;
+	::Effekseer::Effect **x = (::Effekseer::Effect**)luaL_checkudata(L, 1, "Effect");
+	(*x)->Release();
 	*x = nullptr;
 	return 0;
 }
 
 int w_Effect_tostring(lua_State *L)
 {
-	Effect *manager = *(Effect**)luaL_checkudata(L, 1, "Effect");
+	::Effekseer::Effect *manager = *(::Effekseer::Effect**)luaL_checkudata(L, 1, "Effect");
 	lua_pushfstring(L, "Effect: %p", manager);
 	return 1;
 }

@@ -1,5 +1,4 @@
 #include "EffectManager.h"
-#include "Effect.h"
 
 #include "Effekseer.h"
 #include "EffekseerRendererGL.h"
@@ -219,9 +218,9 @@ EffectManager::EffectManager()
 	updateCounter = 0.0f;
 }
 
-::Effekseer::Handle EffectManager::play(Effect *effect)
+::Effekseer::Handle EffectManager::play(::Effekseer::Effect *effect)
 {
-	::Effekseer::Handle handle = manager->Play(effect->getEffect(), ::Effekseer::Vector3D(0, 0, 0));
+	::Effekseer::Handle handle = manager->Play(effect, ::Effekseer::Vector3D(0, 0, 0));
 	// Scale x/y to make effects large enough to be seen, inverting y axis
 	manager->SetScale(handle, 10.0, -10.0, 1.0);
 	return handle;

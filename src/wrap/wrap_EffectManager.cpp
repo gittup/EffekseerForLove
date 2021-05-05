@@ -1,5 +1,4 @@
 #include "EffectManager.h"
-#include "Effect.h"
 #include "runtime.h"
 
 int w_EffectManager_gc(lua_State *L)
@@ -20,7 +19,7 @@ int w_EffectManager_tostring(lua_State *L)
 int w_EffectManager_play(lua_State *L)
 {
 	EffectManager *manager = *(EffectManager**)luaL_checkudata(L, 1, "EffectManager");
-	Effect *effect = *(Effect**)luaL_checkudata(L, 2, "Effect");
+	::Effekseer::Effect *effect = *(::Effekseer::Effect**)luaL_checkudata(L, 2, "Effect");
 	::Effekseer::Handle handle = 0;
 	LUA_TRYWRAP(handle = manager->play(effect););
 	lua_pushinteger(L, handle);
