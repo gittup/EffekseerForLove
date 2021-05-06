@@ -1,0 +1,7 @@
+CC = 'clang++'
+CFLAGS += '-std=c++11'
+LD = 'clang++'
+LDFLAGS += '-lluajit-5.1'
+LDFLAGS += '-shared'
+LDFLAGS += '-framework OpenGL'
+LDEXT = 'so'
