@@ -1,0 +1,32 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index bba8c7cc..5da20c25 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -1792,6 +1792,7 @@ if(EMSCRIPTEN)
+ 		"-s ALLOW_MEMORY_GROWTH=1" # for dynamic resizing of memory, should not have a performance impact as using WASM
+ 		"-s FORCE_FILESYSTEM=1" # to fix Module.addDependency not existing
+ 		"-lidbfs.js" # to fix the ReferenceError: IDBFS is not defined
++		"/PATH/TO/effekseer.wasm"
+ 	)
+ 
+ 	if(NOT LOVEJS_COMPAT)
+diff --git a/src/modules/love/love.cpp b/src/modules/love/love.cpp
+index 9a1c61e6..a4262f9a 100644
+--- a/src/modules/love/love.cpp
++++ b/src/modules/love/love.cpp
+@@ -142,6 +142,7 @@ extern "C"
+ #endif
+ 	extern int luaopen_love_nogame(lua_State*);
+ 	extern int luaopen_love_boot(lua_State*);
++	extern int luaopen_effekseer(lua_State*);
+ }
+ 
+ static const luaL_Reg modules[] = {
+@@ -204,6 +205,7 @@ static const luaL_Reg modules[] = {
+ #endif
+ 	{ "love.nogame", luaopen_love_nogame },
+ 	{ "love.boot", luaopen_love_boot },
++	{ "effekseer", luaopen_effekseer },
+ 	{ 0, 0 }
+ };
+ 

@@ -1,0 +1,18 @@
+ - Effekseer Runtime
+	Website: https://effekseer.github.io/en/
+	License: MIT
+	Copyright (c) 2011 Effekseer Project
+
+ - GLAD
+	Website: http://glad.dav1d.de/
+	License: MIT/Expat
+	Copyright (c) 2013 David Herberth, modified by Alex Szpakowski
+
+ - Demo effect (Pierre01/*)
+	Website: https://effekseer.github.io/en/contributes/Pierre01/index.html
+	License: CC-0
+
+ - Wrapper code (src/wrap)
+	Website: https://github.com/gittup/EffekseerForLove
+	License: zlib
+	Copywrite (c) 2021 Mike Shal
