@@ -1,0 +1,14 @@
+sdk = '/home/marf/cross-mac/MacOSX10.15.sdk'
+CC = 'clang++'
+CFLAGS += '-target x86_64-apple-darwin'
+CFLAGS += '-isysroot ' .. sdk
+CFLAGS += '-I/home/marf/cross-mac/usr/include/c++/v1'
+LD = 'clang++'
+LDFLAGS += '-B/home/marf/cross-mac/cctools-port/cctools/build/ld64/src/ld'
+LDFLAGS += '-L/home/marf/cross-mac/Cellar/luajit/2.0.5/lib'
+LDFLAGS += '-target x86_64-apple-darwin'
+LDFLAGS += '-isysroot ' .. sdk
+LDFLAGS += '-lluajit-5.1'
+LDFLAGS += '-framework OpenGL'
+LDFLAGS += '-shared'
+LDEXT = 'so'
