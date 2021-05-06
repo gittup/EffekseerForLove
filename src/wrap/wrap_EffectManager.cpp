@@ -20,6 +20,7 @@
 
 #include "EffectManager.h"
 #include "runtime.h"
+#include <string>
 
 int w_EffectManager_gc(lua_State *L)
 {
@@ -33,6 +34,21 @@ int w_EffectManager_tostring(lua_State *L)
 {
 	EffectManager *manager = *(EffectManager**)luaL_checkudata(L, 1, "EffectManager");
 	lua_pushfstring(L, "EffectManager: %p", manager);
+	return 1;
+}
+
+int w_EffectManager_newEffect(lua_State *L)
+{
+	EffectManager *manager = *(EffectManager**)luaL_checkudata(L, 1, "EffectManager");
+	::Effekseer::Effect *effect = nullptr;
+	std::string filename = luaL_checkstring(L, 2);
+	EFK_CHAR filename16[256];
+	::Effekseer::ConvertUtf8ToUtf16(filename16, 256, filename.c_str());
+	LUA_TRYWRAP(effect = Effekseer::Effect::Create(manager->getManager(), filename16););
+	::Effekseer::Effect **dat = (::Effekseer::Effect**)lua_newuserdata(L, sizeof(::Effekseer::Effect*));
+	*dat = effect;
+	luaL_getmetatable(L, "Effect");
+	lua_setmetatable(L, -2);
 	return 1;
 }
 
@@ -103,6 +119,7 @@ int w_EffectManager_draw(lua_State *L)
 }
 
 const luaL_Reg w_EffectManager_functions[] = {
+	{ "newEffect", w_EffectManager_newEffect },
 	{ "play", w_EffectManager_play },
 	{ "stop", w_EffectManager_stop },
 	{ "stopAll", w_EffectManager_stopAll },

@@ -7,7 +7,7 @@ function love.load(args)
 	love.window.setMode(1280, 800)
 
 	manager = effekseer.newEffectManager()
-	effect = effekseer.newEffect(manager, "Pierre01/LightningStrike.efk")
+	effect = manager:newEffect("Pierre01/LightningStrike.efk")
 	img = love.graphics.newImage('Pierre01/Texture/Burst_1.png')
 end
 
