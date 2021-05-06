@@ -9,6 +9,3 @@ CFLAGS += '-I' .. EFFEKSEER_PLUGIN .. '/src/effekseer/src/EffekseerRendererGL/'
 CFLAGS += '-fPIC'
 CFLAGS += '-g'
 CFLAGS += '-O2'
-
-LDFLAGS += '-fPIC'
-LDFLAGS += '-g'
