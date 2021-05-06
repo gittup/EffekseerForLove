@@ -14,6 +14,9 @@ love.graphics.\* instead.
 ## Build
 ### Linux
 	$ tup
+	# effekseer.so should be built, which can be used in your LÖVE application.
+
+	# Try out the demo and click the mouse to create an effect:
 	$ love .
 
 ### love.js
