@@ -64,7 +64,6 @@ extern "C" int luaopen_effekseer(lua_State *newL)
 	if(luaopen_effect(L) < 0) {
 		lua_error(L);
 	}
-	printf("OHIA: Lua state: %p\n", L);
 
 	lua_createtable(L, 0, 0);
 	lua_pushstring(L, "newEffectManager");
