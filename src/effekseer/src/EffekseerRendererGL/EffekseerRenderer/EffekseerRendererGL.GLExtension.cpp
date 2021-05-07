@@ -634,7 +634,7 @@ void glGenSamplers(GLsizei n, GLuint* samplers)
 {
 #if _WIN32
 	g_glGenSamplers(n, samplers);
-#elif defined(__EFFEKSEER_RENDERER_GLES2__) || defined(__EFFEKSEER_RENDERER_GL2__)
+#elif defined(__EFFEKSEER_RENDERER_GLES2__) || defined(__EFFEKSEER_RENDERER_GL2__) || defined(EMSCRIPTEN)
 #else
 	::glGenSamplers(n, samplers);
 #endif
@@ -644,7 +644,7 @@ void glDeleteSamplers(GLsizei n, const GLuint* samplers)
 {
 #if _WIN32
 	g_glDeleteSamplers(n, samplers);
-#elif defined(__EFFEKSEER_RENDERER_GLES2__) || defined(__EFFEKSEER_RENDERER_GL2__)
+#elif defined(__EFFEKSEER_RENDERER_GLES2__) || defined(__EFFEKSEER_RENDERER_GL2__) || defined(EMSCRIPTEN)
 #else
 	::glDeleteSamplers(n, samplers);
 #endif
@@ -654,7 +654,7 @@ void glSamplerParameteri(GLuint sampler, GLenum pname, GLint param)
 {
 #if _WIN32
 	g_glSamplerParameteri(sampler, pname, param);
-#elif defined(__EFFEKSEER_RENDERER_GLES2__) || defined(__EFFEKSEER_RENDERER_GL2__)
+#elif defined(__EFFEKSEER_RENDERER_GLES2__) || defined(__EFFEKSEER_RENDERER_GL2__) || defined(EMSCRIPTEN)
 #else
 	::glSamplerParameteri(sampler, pname, param);
 #endif
@@ -664,7 +664,7 @@ void glBindSampler(GLuint unit, GLuint sampler)
 {
 #if _WIN32
 	g_glBindSampler(unit, sampler);
-#elif defined(__EFFEKSEER_RENDERER_GLES2__) || defined(__EFFEKSEER_RENDERER_GL2__)
+#elif defined(__EFFEKSEER_RENDERER_GLES2__) || defined(__EFFEKSEER_RENDERER_GL2__) || defined(EMSCRIPTEN)
 #else
 	::glBindSampler(unit, sampler);
 #endif
@@ -676,7 +676,7 @@ void* glMapBuffer(GLenum target, GLenum access)
 	return g_glMapBuffer(target, access);
 #elif defined(__EFFEKSEER_RENDERER_GLES2__)
 	return g_glMapBufferOES(target, access);
-#elif defined(__EFFEKSEER_RENDERER_GLES3__)
+#elif defined(__EFFEKSEER_RENDERER_GLES3__) || defined(EMSCRIPTEN)
 	return nullptr;
 #else
 	return ::glMapBuffer(target, access);
@@ -700,7 +700,11 @@ void* glMapBufferRange(GLenum target, GLintptr offset, GLsizeiptr length, GLbitf
 #endif
 
 #else
+#if defined(EMSCRIPTEN)
+	return nullptr;
+#else
 	return ::glMapBufferRange(target, offset, length, access);
+#endif
 #endif
 
 #endif
@@ -710,6 +714,8 @@ GLboolean glUnmapBuffer(GLenum target)
 {
 #if _WIN32
 	return g_glUnmapBuffer(target);
+#elif defined(EMSCRIPTEN)
+	return false;
 #elif defined(__EFFEKSEER_RENDERER_GLES2__)
 	return g_glUnmapBufferOES(target);
 #else
