@@ -850,7 +850,7 @@ bool RendererImplemented::EndRendering()
 		glDepthFunc(m_originalState.depthFunc);
 		glDepthMask(m_originalState.depthWrite);
 		glCullFace(m_originalState.cullFaceMode);
-		glBlendFuncSeparate(m_originalState.blendSrc, m_originalState.blendDst, m_originalState.blendSrcAlpha, m_originalState.blendDstAlpha);
+		GLExt::glBlendFuncSeparate(m_originalState.blendSrc, m_originalState.blendDst, m_originalState.blendSrcAlpha, m_originalState.blendDstAlpha);
 		GLExt::glBlendEquation(m_originalState.blendEquation);
 
 		GLExt::glBindBuffer(GL_ARRAY_BUFFER, m_originalState.arrayBufferBinding);

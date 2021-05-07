@@ -22,6 +22,9 @@
 
 #include "Effekseer.h"
 #include "EffekseerRendererGL.h"
+#include "EffekseerRenderer/EffekseerRendererGL.GLExtension.h"
+
+using namespace EffekseerRendererGL;
 
 void lua_prep(const char *funcname)
 {
@@ -121,7 +124,7 @@ public:
 			     GL_RGBA,
 			     GL_UNSIGNED_BYTE,
 			     data);
-		glGenerateMipmap(GL_TEXTURE_2D);
+		GLExt::glGenerateMipmap(GL_TEXTURE_2D);
 		glBindTexture(GL_TEXTURE_2D, 0);
 
 		textureData->UserID = texture;
@@ -287,5 +290,5 @@ void EffectManager::draw()
 	renderer->BeginRendering();
 	manager->Draw();
 	renderer->EndRendering();
-	glUseProgram(prog); // TODO Effekseer changes the glUseProgram to something else, so we need to restore it, otherwise everything done in love.draw() doesn't show up.
+	GLExt::glUseProgram(prog); // TODO Effekseer changes the glUseProgram to something else, so we need to restore it, otherwise everything done in love.draw() doesn't show up.
 }
