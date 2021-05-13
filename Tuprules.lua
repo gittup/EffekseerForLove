@@ -7,5 +7,10 @@ CFLAGS += '`pkg-config luajit --cflags`'
 CFLAGS += '-I' .. EFFEKSEER_PLUGIN .. '/src/effekseer/src/Effekseer/'
 CFLAGS += '-I' .. EFFEKSEER_PLUGIN .. '/src/effekseer/src/EffekseerRendererGL/'
 CFLAGS += '-fPIC'
-CFLAGS += '-g'
-CFLAGS += '-O2'
+
+if tup.getconfig('DEBUG') == 'y' then
+	CFLAGS += '-g'
+	CFLAGS += '-Og'
+else
+	CFLAGS += '-O2'
+end
