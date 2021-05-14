@@ -98,7 +98,7 @@ int w_EffectManager_setLocation(lua_State *L)
 	::Effekseer::Handle handle = luaL_checkinteger(L, 2);
 	float x = luaL_checknumber(L, 3);
 	float y = luaL_checknumber(L, 4);
-	float z = luaL_checknumber(L, 5);
+	float z = luaL_optnumber(L, 5, 0.0);
 	LUA_TRYWRAP(manager->getManager()->SetLocation(handle, x, y, z););
 	return 0;
 }
