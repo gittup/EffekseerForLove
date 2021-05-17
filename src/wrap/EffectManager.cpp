@@ -39,11 +39,14 @@ void lua_prep(const char *funcname)
 		if(dot) {
 			memcpy(buf, p, dot-p);
 			buf[dot-p] = 0;
-			lua_getfield(L, -1, buf);
 			p = dot + 1;
 		} else {
-			lua_getfield(L, -1, p);
+			strcpy(buf, p);
 			p = NULL;
+		}
+		lua_getfield(L, -1, buf);
+		if(lua_isnil(L, -1)) {
+			luaL_error(L, "Unable to find field '%s' for function: %s\n", buf, funcname);
 		}
 		lua_remove(L, -2); // remove previous field
 	}
