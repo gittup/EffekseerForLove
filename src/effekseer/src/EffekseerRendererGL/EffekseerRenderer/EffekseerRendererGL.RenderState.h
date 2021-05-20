@@ -17,8 +17,7 @@ namespace EffekseerRendererGL
 //-----------------------------------------------------------------------------------
 //
 //-----------------------------------------------------------------------------------
-class RenderState
-	: public ::EffekseerRenderer::RenderStateBase
+class RenderState : public ::EffekseerRenderer::RenderStateBase
 {
 private:
 	RendererImplemented* m_renderer;

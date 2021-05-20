@@ -10,9 +10,9 @@
 #include "../Effekseer.Matrix43.h"
 #include "../Effekseer.Vector2D.h"
 #include "../Effekseer.Vector3D.h"
-#include "../SIMD/Effekseer.Mat43f.h"
-#include "../SIMD/Effekseer.Vec2f.h"
-#include "../SIMD/Effekseer.Vec3f.h"
+#include "../SIMD/Mat43f.h"
+#include "../SIMD/Vec2f.h"
+#include "../SIMD/Vec3f.h"
 
 //----------------------------------------------------------------------------------
 //
@@ -26,37 +26,34 @@ struct NodeRendererTextureUVTypeParameter;
 //
 //----------------------------------------------------------------------------------
 
-class RibbonRenderer
+class RibbonRenderer : public ReferenceObject
 {
 public:
 	struct NodeParameter
 	{
 		Effect* EffectPointer;
-		//int32_t				ColorTextureIndex;
-		//AlphaBlendType			AlphaBlend;
-		//TextureFilterType	TextureFilter;
-		//TextureWrapType	TextureWrap;
 		bool ZTest;
 		bool ZWrite;
 		bool ViewpointDependent;
 
-		//bool				Distortion;
-		//float				DistortionIntensity;
-
 		bool IsRightHand;
+		float Maginification = 1.0f;
+
 		int32_t SplineDivision;
 		NodeRendererDepthParameter* DepthParameterPtr = nullptr;
 		NodeRendererBasicParameter* BasicParameterPtr = nullptr;
 		NodeRendererTextureUVTypeParameter* TextureUVTypeParameterPtr = nullptr;
-		//RendererMaterialType MaterialType = RendererMaterialType::Default;
-		//MaterialParameter* MaterialParameterPtr = nullptr;
+
+		bool EnableViewOffset = false;
+
+		RefPtr<RenderingUserData> UserData;
 	};
 
 	struct InstanceParameter
 	{
 		int32_t InstanceCount;
 		int32_t InstanceIndex;
-		Mat43f SRTMatrix43;
+		SIMD::Mat43f SRTMatrix43;
 		Color AllColor;
 
 		// Lower left, Lower right, Upper left, Upper right
@@ -65,13 +62,23 @@ public:
 		float Positions[4];
 
 		RectF UV;
-#ifdef __EFFEKSEER_BUILD_VERSION16__
+
 		RectF AlphaUV;
+
+		RectF UVDistortionUV;
+
+		RectF BlendUV;
+
+		RectF BlendAlphaUV;
+
+		RectF BlendUVDistortionUV;
 
 		float FlipbookIndexAndNextRate;
 
 		float AlphaThreshold;
-#endif
+
+		float ViewOffsetDistance;
+
 		std::array<float, 4> CustomData1;
 		std::array<float, 4> CustomData2;
 	};

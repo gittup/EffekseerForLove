@@ -40,7 +40,7 @@ int w_EffectManager_tostring(lua_State *L)
 int w_EffectManager_newEffect(lua_State *L)
 {
 	EffectManager *manager = *(EffectManager**)luaL_checkudata(L, 1, "EffectManager");
-	::Effekseer::Effect *effect = nullptr;
+	::Effekseer::EffectRef effect = nullptr;
 	std::string filename = luaL_checkstring(L, 2);
 
 	// Default to a 10.0 magnification. This seems to work pretty well for
@@ -50,10 +50,11 @@ int w_EffectManager_newEffect(lua_State *L)
 	EFK_CHAR filename16[256];
 	::Effekseer::ConvertUtf8ToUtf16(filename16, 256, filename.c_str());
 	LUA_TRYWRAP(effect = Effekseer::Effect::Create(manager->getManager(), filename16, magnification););
-	if(!effect) {
+	if(effect == NULL) {
 		luaL_error(L, "Failed to load effect (make sure it is a valid .efk file): %s", filename.c_str());
 	}
-	::Effekseer::Effect **dat = (::Effekseer::Effect**)lua_newuserdata(L, sizeof(::Effekseer::Effect*));
+	void *mem = lua_newuserdata(L, sizeof(::Effekseer::EffectRef));
+	::Effekseer::EffectRef *dat = new(mem) ::Effekseer::EffectRef();
 	*dat = effect;
 	luaL_getmetatable(L, "Effect");
 	lua_setmetatable(L, -2);
@@ -63,7 +64,7 @@ int w_EffectManager_newEffect(lua_State *L)
 int w_EffectManager_play(lua_State *L)
 {
 	EffectManager *manager = *(EffectManager**)luaL_checkudata(L, 1, "EffectManager");
-	::Effekseer::Effect *effect = *(::Effekseer::Effect**)luaL_checkudata(L, 2, "Effect");
+	::Effekseer::EffectRef effect = *(::Effekseer::EffectRef*)luaL_checkudata(L, 2, "Effect");
 	float x = luaL_optnumber(L, 3, 0.0);
 	float y = luaL_optnumber(L, 4, 0.0);
 	float z = luaL_optnumber(L, 5, 0.0);

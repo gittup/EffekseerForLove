@@ -1,24 +1,42 @@
 
 #include "EffekseerRenderer.Renderer.h"
 #include "EffekseerRenderer.Renderer_Impl.h"
+#include "ModelLoader.h"
+#include "TextureLoader.h"
+#include <Effekseer.h>
 #include <assert.h>
 
 namespace EffekseerRenderer
 {
 
-Renderer::Renderer()
+::Effekseer::TextureLoaderRef CreateTextureLoader(::Effekseer::Backend::GraphicsDeviceRef gprahicsDevice,
+												  ::Effekseer::FileInterface* fileInterface,
+												  ::Effekseer::ColorSpaceType colorSpaceType)
 {
-	impl = new Impl();
+#ifdef __EFFEKSEER_RENDERER_INTERNAL_LOADER__
+	return ::Effekseer::MakeRefPtr<TextureLoader>(gprahicsDevice.Get(), fileInterface, colorSpaceType);
+#else
+	return nullptr;
+#endif
+}
+
+::Effekseer::ModelLoaderRef CreateModelLoader(::Effekseer::Backend::GraphicsDeviceRef gprahicsDevice, ::Effekseer::FileInterface* fileInterface)
+{
+	return ::Effekseer::MakeRefPtr<ModelLoader>(gprahicsDevice, fileInterface);
+}
+
+Renderer::Renderer()
+	: impl(new Impl())
+{
 }
 
 Renderer::~Renderer()
 {
-	ES_SAFE_DELETE(impl);
 }
 
 Renderer::Impl* Renderer::GetImpl()
 {
-	return impl;
+	return impl.get();
 }
 
 ::Effekseer::Vector3D Renderer::GetLightDirection() const
@@ -151,10 +169,59 @@ void Renderer::SetTime(float time)
 	impl->SetTime(time);
 }
 
-void Renderer::SetBackgroundTexture(::Effekseer::TextureData* textureData)
+const ::Effekseer::Backend::TextureRef& Renderer::GetBackground()
 {
-	// not implemented
-	assert(0);
+	return impl->GetBackground();
+}
+
+void Renderer::SetBackground(::Effekseer::Backend::TextureRef texture)
+{
+	impl->SetBackground(texture);
+}
+
+::Effekseer::Backend::TextureRef Renderer::CreateProxyTexture(EffekseerRenderer::ProxyTextureType type)
+{
+	std::array<uint8_t, 4> buf;
+
+	if (type == EffekseerRenderer::ProxyTextureType::White)
+	{
+		buf = {255, 255, 255, 255};
+	}
+	else if (type == EffekseerRenderer::ProxyTextureType::Normal)
+	{
+		buf = {127, 127, 255, 255};
+	}
+	else
+	{
+		assert(0);
+	}
+
+	Effekseer::Backend::TextureParameter param;
+	param.Format = Effekseer::Backend::TextureFormatType::R8G8B8A8_UNORM;
+	param.Size = {1, 1};
+	param.GenerateMipmap = false;
+	param.InitialData.assign(buf.begin(), buf.end());
+	return GetGraphicsDevice()->CreateTexture(param);
+}
+
+void Renderer::DeleteProxyTexture(::Effekseer::Backend::TextureRef& texture)
+{
+	texture.Reset();
+}
+
+void Renderer::GetDepth(::Effekseer::Backend::TextureRef& texture, DepthReconstructionParameter& reconstructionParam)
+{
+	impl->GetDepth(texture, reconstructionParam);
+}
+
+void Renderer::SetDepth(::Effekseer::Backend::TextureRef texture, const DepthReconstructionParameter& reconstructionParam)
+{
+	impl->SetDepth(texture, reconstructionParam);
+}
+
+Effekseer::Backend::GraphicsDeviceRef Renderer::GetGraphicsDevice() const
+{
+	return nullptr;
 }
 
 } // namespace EffekseerRenderer

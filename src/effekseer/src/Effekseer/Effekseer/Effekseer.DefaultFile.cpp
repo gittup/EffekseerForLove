@@ -17,7 +17,7 @@ namespace Effekseer
 DefaultFileReader::DefaultFileReader(FILE* filePtr)
 	: m_filePtr(filePtr)
 {
-	assert(filePtr != NULL);
+	assert(filePtr != nullptr);
 }
 
 //----------------------------------------------------------------------------------
@@ -70,7 +70,7 @@ size_t DefaultFileReader::GetLength()
 DefaultFileWriter::DefaultFileWriter(FILE* filePtr)
 	: m_filePtr(filePtr)
 {
-	assert(filePtr != NULL);
+	assert(filePtr != nullptr);
 }
 
 //----------------------------------------------------------------------------------
@@ -128,20 +128,20 @@ size_t DefaultFileWriter::GetLength()
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-FileReader* DefaultFileInterface::OpenRead(const EFK_CHAR* path)
+FileReader* DefaultFileInterface::OpenRead(const char16_t* path)
 {
-	FILE* filePtr = NULL;
+	FILE* filePtr = nullptr;
 #ifdef _WIN32
 	_wfopen_s(&filePtr, (const wchar_t*)path, L"rb");
 #else
-	int8_t path8[256];
-	ConvertUtf16ToUtf8(path8, 256, (const int16_t*)path);
-	filePtr = fopen((const char*)path8, "rb");
+	char path8[256];
+	ConvertUtf16ToUtf8(path8, 256, path);
+	filePtr = fopen(path8, "rb");
 #endif
 
-	if (filePtr == NULL)
+	if (filePtr == nullptr)
 	{
-		return NULL;
+		return nullptr;
 	}
 
 	return new DefaultFileReader(filePtr);
@@ -150,20 +150,20 @@ FileReader* DefaultFileInterface::OpenRead(const EFK_CHAR* path)
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-FileWriter* DefaultFileInterface::OpenWrite(const EFK_CHAR* path)
+FileWriter* DefaultFileInterface::OpenWrite(const char16_t* path)
 {
-	FILE* filePtr = NULL;
+	FILE* filePtr = nullptr;
 #ifdef _WIN32
 	_wfopen_s(&filePtr, (const wchar_t*)path, L"wb");
 #else
-	int8_t path8[256];
-	ConvertUtf16ToUtf8(path8, 256, (const int16_t*)path);
-	filePtr = fopen((const char*)path8, "wb");
+	char path8[256];
+	ConvertUtf16ToUtf8(path8, 256, path);
+	filePtr = fopen(path8, "wb");
 #endif
 
-	if (filePtr == NULL)
+	if (filePtr == nullptr)
 	{
-		return NULL;
+		return nullptr;
 	}
 
 	return new DefaultFileWriter(filePtr);

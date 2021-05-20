@@ -11,9 +11,7 @@
 
 namespace Culling3D
 {
-class WorldInternal
-	: public World,
-	  public ReferenceObject
+class WorldInternal : public World, public ReferenceObject
 {
 private:
 	float xSize;

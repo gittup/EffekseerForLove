@@ -10,9 +10,9 @@
 #include "../Effekseer.Matrix43.h"
 #include "../Effekseer.Vector2D.h"
 #include "../Effekseer.Vector3D.h"
-#include "../SIMD/Effekseer.Mat43f.h"
-#include "../SIMD/Effekseer.Vec2f.h"
-#include "../SIMD/Effekseer.Vec3f.h"
+#include "../SIMD/Mat43f.h"
+#include "../SIMD/Vec2f.h"
+#include "../SIMD/Vec3f.h"
 
 //----------------------------------------------------------------------------------
 //
@@ -26,31 +26,30 @@ struct NodeRendererTextureUVTypeParameter;
 //
 //----------------------------------------------------------------------------------
 
-class TrackRenderer
+class TrackRenderer : public ReferenceObject
 {
 public:
 	struct NodeParameter
 	{
 		Effect* EffectPointer;
-		//int32_t				ColorTextureIndex;
-		//AlphaBlendType			AlphaBlend;
-		//TextureFilterType	TextureFilter;
-		//TextureWrapType		TextureWrap;
 		bool ZTest;
 		bool ZWrite;
-
-		//bool				Distortion;
-		//float				DistortionIntensity;
 
 		int32_t SplineDivision;
 
 		bool IsRightHand;
+		float Maginification = 1.0f;
+
 		NodeRendererDepthParameter* DepthParameterPtr = nullptr;
 		NodeRendererBasicParameter* BasicParameterPtr = nullptr;
 		NodeRendererTextureUVTypeParameter* TextureUVTypeParameterPtr = nullptr;
 
 		RendererMaterialType MaterialType = RendererMaterialType::Default;
-		MaterialParameter* MaterialParameterPtr = nullptr;
+		MaterialRenderData* MaterialRenderDataPtr = nullptr;
+
+		bool EnableViewOffset = false;
+
+		RefPtr<RenderingUserData> UserData;
 	};
 
 	struct InstanceGroupParameter
@@ -61,7 +60,7 @@ public:
 	{
 		int32_t InstanceCount;
 		int32_t InstanceIndex;
-		Mat43f SRTMatrix43;
+		SIMD::Mat43f SRTMatrix43;
 
 		Color ColorLeft;
 		Color ColorCenter;
@@ -76,13 +75,23 @@ public:
 		float SizeBack;
 
 		RectF UV;
-#ifdef __EFFEKSEER_BUILD_VERSION16__
+
 		RectF AlphaUV;
+
+		RectF UVDistortionUV;
+
+		RectF BlendUV;
+
+		RectF BlendAlphaUV;
+
+		RectF BlendUVDistortionUV;
 
 		float FlipbookIndexAndNextRate;
 
 		float AlphaThreshold;
-#endif
+
+		float ViewOffsetDistance;
+
 		std::array<float, 4> CustomData1;
 		std::array<float, 4> CustomData2;
 	};

@@ -8,7 +8,7 @@
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-#if (defined(_M_IX86_FP) && _M_IX86_FP >= 2) || defined(__SSE__)
+#if (defined(_M_AMD64) || defined(_M_X64)) || (defined(_M_IX86_FP) && _M_IX86_FP >= 2) || defined(__SSE2__)
 #define EFK_SSE2
 #include <emmintrin.h>
 #elif defined(__ARM_NEON__)
@@ -135,13 +135,13 @@ Color Color::Lerp(const Color in1, const Color in2, float t)
 
 	s1 = _mm_unpacklo_epi8(s1, zero);
 	s2 = _mm_unpacklo_epi8(s2, zero);
-	
+
 	__m128i r0 = _mm_subs_epi16(s2, s1);
 	__m128i r1 = _mm_mullo_epi16(r0, tm);
 	__m128i r2 = _mm_srai_epi16(r1, 8);
 	__m128i r3 = _mm_adds_epi16(s1, r2);
 	__m128i res = _mm_packus_epi16(r3, zero);
-	
+
 	Color o;
 	*(int*)&o = _mm_cvtsi128_si32(res);
 	return o;
@@ -173,7 +173,7 @@ Color Color::Lerp(const Color in1, const Color in2, float t)
 	int16x8_t r2 = vrshrq_n_s16(r1, 8);
 	int16x8_t r3 = vqaddq_s16(s3, r2);
 	uint8x8_t res = vqmovn_u16(r3);
-	
+
 	Color o;
 	*(uint32_t*)&o = vget_lane_u32(vreinterpret_u32_u8(res), 0);
 	return o;

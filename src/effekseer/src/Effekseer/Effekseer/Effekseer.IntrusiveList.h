@@ -285,8 +285,7 @@ inline void IntrusiveList<T>::pop_front()
 }
 
 template <typename T>
-inline typename IntrusiveList<T>::Iterator
-IntrusiveList<T>::insert(typename IntrusiveList<T>::Iterator it, Type* newObject)
+inline typename IntrusiveList<T>::Iterator IntrusiveList<T>::insert(typename IntrusiveList<T>::Iterator it, Type* newObject)
 {
 	assert(newObject != nullptr);
 	assert(newObject->m_PrevNode == nullptr);
@@ -307,8 +306,7 @@ IntrusiveList<T>::insert(typename IntrusiveList<T>::Iterator it, Type* newObject
 }
 
 template <typename T>
-inline typename IntrusiveList<T>::Iterator
-IntrusiveList<T>::erase(typename IntrusiveList<T>::Iterator it)
+inline typename IntrusiveList<T>::Iterator IntrusiveList<T>::erase(typename IntrusiveList<T>::Iterator it)
 {
 	auto prev = it->m_PrevNode;
 	auto next = it->m_NextNode;

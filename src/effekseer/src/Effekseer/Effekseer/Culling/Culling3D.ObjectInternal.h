@@ -6,16 +6,15 @@
 
 namespace Culling3D
 {
-class ObjectInternal
-	: public Object,
-	  public ReferenceObject
+class ObjectInternal : public Object, public ReferenceObject
 {
 public:
 	struct Status
 	{
 		Vector3DF Position;
 
-		union {
+		union
+		{
 			struct
 			{
 				float Radius;

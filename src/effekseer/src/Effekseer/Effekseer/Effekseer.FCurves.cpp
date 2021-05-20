@@ -12,10 +12,10 @@ FCurve::FCurve(float defaultValue)
 {
 }
 
-int32_t FCurve::Load(void* data, int32_t version)
+int32_t FCurve::Load(const void* data, int32_t version)
 {
 	int32_t size = 0;
-	uint8_t* p = (uint8_t*)data;
+	const uint8_t* p = (const uint8_t*)data;
 
 	memcpy(&start_, p, sizeof(int32_t));
 	p += sizeof(int32_t);
@@ -82,6 +82,11 @@ float FCurve::GetValue(float living, float life, FCurveTimelineType type) const
 	frame -= offset_;
 	auto flen = static_cast<float>(len_);
 
+	if (len_ == 0)
+	{
+		return keys_[0];
+	}
+
 	if (frame < 0)
 	{
 		if (start_ == FCurveEdge::Constant)
@@ -135,7 +140,7 @@ float FCurve::GetValue(float living, float life, FCurveTimelineType type) const
 	}
 }
 
-float FCurve::GetOffset(InstanceGlobal& g) const
+float FCurve::GetOffset(IRandObject& g) const
 {
 	return g.GetRand(offsetMin_, offsetMax_);
 }
@@ -162,11 +167,10 @@ void FCurve::Maginify(float value)
 	}
 }
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
-int32_t FCurveScalar::Load(void* data, int32_t version)
+int32_t FCurveScalar::Load(const void* data, int32_t version)
 {
 	int32_t size = 0;
-	uint8_t* p = (uint8_t*)data;
+	const uint8_t* p = (const uint8_t*)data;
 
 	if (version >= 1600)
 	{
@@ -187,16 +191,15 @@ float FCurveScalar::GetValues(float living, float life) const
 	return S.GetValue(living, life, Timeline);
 }
 
-float FCurveScalar::GetOffsets(InstanceGlobal& g) const
+float FCurveScalar::GetOffsets(IRandObject& g) const
 {
 	return S.GetOffset(g);
 }
-#endif
 
-int32_t FCurveVector2D::Load(void* data, int32_t version)
+int32_t FCurveVector2D::Load(const void* data, int32_t version)
 {
 	int32_t size = 0;
-	uint8_t* p = (uint8_t*)data;
+	const uint8_t* p = (const uint8_t*)data;
 
 	if (version >= 15)
 	{
@@ -216,24 +219,24 @@ int32_t FCurveVector2D::Load(void* data, int32_t version)
 	return size;
 }
 
-Vec2f FCurveVector2D::GetValues(float living, float life) const
+SIMD::Vec2f FCurveVector2D::GetValues(float living, float life) const
 {
 	auto x = X.GetValue(living, life, Timeline);
 	auto y = Y.GetValue(living, life, Timeline);
-	return Vec2f{x, y};
+	return SIMD::Vec2f{x, y};
 }
 
-Vec2f FCurveVector2D::GetOffsets(InstanceGlobal& g) const
+SIMD::Vec2f FCurveVector2D::GetOffsets(IRandObject& g) const
 {
 	auto x = X.GetOffset(g);
 	auto y = Y.GetOffset(g);
-	return Vec2f{x, y};
+	return SIMD::Vec2f{x, y};
 }
 
-int32_t FCurveVector3D::Load(void* data, int32_t version)
+int32_t FCurveVector3D::Load(const void* data, int32_t version)
 {
 	int32_t size = 0;
-	uint8_t* p = (uint8_t*)data;
+	const uint8_t* p = (const uint8_t*)data;
 
 	if (version >= 15)
 	{
@@ -257,7 +260,7 @@ int32_t FCurveVector3D::Load(void* data, int32_t version)
 	return size;
 }
 
-Vec3f FCurveVector3D::GetValues(float living, float life) const
+SIMD::Vec3f FCurveVector3D::GetValues(float living, float life) const
 {
 	auto x = X.GetValue(living, life, Timeline);
 	auto y = Y.GetValue(living, life, Timeline);
@@ -265,7 +268,7 @@ Vec3f FCurveVector3D::GetValues(float living, float life) const
 	return {x, y, z};
 }
 
-Vec3f FCurveVector3D::GetOffsets(InstanceGlobal& g) const
+SIMD::Vec3f FCurveVector3D::GetOffsets(IRandObject& g) const
 {
 	auto x = X.GetOffset(g);
 	auto y = Y.GetOffset(g);
@@ -273,10 +276,10 @@ Vec3f FCurveVector3D::GetOffsets(InstanceGlobal& g) const
 	return {x, y, z};
 }
 
-int32_t FCurveVectorColor::Load(void* data, int32_t version)
+int32_t FCurveVectorColor::Load(const void* data, int32_t version)
 {
 	int32_t size = 0;
-	uint8_t* p = (uint8_t*)data;
+	const uint8_t* p = (const uint8_t*)data;
 
 	if (version >= 15)
 	{
@@ -314,7 +317,7 @@ std::array<float, 4> FCurveVectorColor::GetValues(float living, float life) cons
 	return std::array<float, 4>{r, g, b, a};
 }
 
-std::array<float, 4> FCurveVectorColor::GetOffsets(InstanceGlobal& gl) const
+std::array<float, 4> FCurveVectorColor::GetOffsets(IRandObject& gl) const
 {
 	auto r = R.GetOffset(gl);
 	auto g = G.GetOffset(gl);

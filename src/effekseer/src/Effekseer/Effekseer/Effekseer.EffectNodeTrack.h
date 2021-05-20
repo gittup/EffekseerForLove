@@ -25,7 +25,8 @@ struct TrackSizeParameter
 		Parameter_DWORD = 0x7fffffff,
 	} type;
 
-	union {
+	union
+	{
 		struct
 		{
 			float size;
@@ -36,15 +37,15 @@ struct TrackSizeParameter
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-class EffectNodeTrack
-	: public EffectNodeImplemented
+class EffectNodeTrack : public EffectNodeImplemented
 {
 public:
 	struct InstanceGroupValues
 	{
 		struct Color
 		{
-			union {
+			union
+			{
 				struct
 				{
 					Effekseer::Color color_;
@@ -71,7 +72,8 @@ public:
 
 		struct Size
 		{
-			union {
+			union
+			{
 				struct
 				{
 					float size_;
@@ -151,32 +153,37 @@ public:
 	{
 	}
 
-	void LoadRendererParameter(unsigned char*& pos, Setting* setting) override;
+	void LoadRendererParameter(unsigned char*& pos, const SettingRef& setting) override;
 
-	void BeginRendering(int32_t count, Manager* manager) override;
+	void BeginRendering(int32_t count, Manager* manager, void* userData) override;
 
-	void BeginRenderingGroup(InstanceGroup* group, Manager* manager) override;
+	void BeginRenderingGroup(InstanceGroup* group, Manager* manager, void* userData) override;
 
-	void EndRenderingGroup(InstanceGroup* group, Manager* manager) override;
+	void EndRenderingGroup(InstanceGroup* group, Manager* manager, void* userData) override;
 
-	void Rendering(const Instance& instance, const Instance* next_instance, Manager* manager) override;
+	void Rendering(const Instance& instance, const Instance* next_instance, Manager* manager, void* userData) override;
 
-	void EndRendering(Manager* manager) override;
+	void EndRendering(Manager* manager, void* userData) override;
 
 	void InitializeRenderedInstanceGroup(InstanceGroup& instanceGroup, Manager* manager) override;
 
-	void InitializeRenderedInstance(Instance& instance, Manager* manager) override;
+	void InitializeRenderedInstance(Instance& instance, InstanceGroup& instanceGroup, Manager* manager) override;
 
-	void UpdateRenderedInstance(Instance& instance, Manager* manager) override;
+	void UpdateRenderedInstance(Instance& instance, InstanceGroup& instanceGroup, Manager* manager) override;
 
 	eEffectNodeType GetType() const override
 	{
 		return EFFECT_NODE_TYPE_TRACK;
 	}
 
-	void InitializeValues(InstanceGroupValues::Color& value, StandardColorParameter& param, InstanceGlobal* instanceGlobal);
+	void InitializeValues(InstanceGroupValues::Color& value, StandardColorParameter& param, IRandObject* rand);
 	void InitializeValues(InstanceGroupValues::Size& value, TrackSizeParameter& param, Manager* manager);
-	void SetValues(Color& c, const Instance& instance, InstanceGroupValues::Color& value, StandardColorParameter& param, int32_t time, int32_t livedTime);
+	void SetValues(Color& c,
+				   const Instance& instance,
+				   InstanceGroupValues::Color& value,
+				   StandardColorParameter& param,
+				   int32_t time,
+				   int32_t livedTime);
 	void SetValues(float& s, InstanceGroupValues::Size& value, TrackSizeParameter& param, float time);
 	void LoadValues(TrackSizeParameter& param, unsigned char*& pos);
 };

@@ -12,13 +12,14 @@
 //----------------------------------------------------------------------------------
 namespace Effekseer
 {
+
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
 /**
 	@brief	エフェクトファイル読み込み破棄関数指定クラス
 */
-class EffectLoader
+class EffectLoader : public ReferenceObject
 {
 public:
 	/**
@@ -45,7 +46,7 @@ public:
 		エフェクトファイルを読み込む。
 		::Effekseer::Effect::Create実行時に使用される。
 	*/
-	virtual bool Load(const EFK_CHAR* path, void*& data, int32_t& size) = 0;
+	virtual bool Load(const char16_t* path, void*& data, int32_t& size) = 0;
 
 	/**
 		@brief	エフェクトファイルを破棄する。

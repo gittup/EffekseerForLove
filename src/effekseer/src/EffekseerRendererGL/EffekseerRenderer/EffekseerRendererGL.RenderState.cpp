@@ -120,8 +120,7 @@ void RenderState::Update(bool forced)
 		{
 			glEnable(GL_BLEND);
 
-			if (m_next.AlphaBlend == ::Effekseer::AlphaBlendType::Opacity ||
-				m_renderer->GetRenderMode() == ::Effekseer::RenderMode::Wireframe)
+			if (m_next.AlphaBlend == ::Effekseer::AlphaBlendType::Opacity)
 			{
 				GLExt::glBlendEquationSeparate(GL_FUNC_ADD, GL_MAX);
 				GLExt::glBlendFuncSeparate(GL_ONE, GL_ZERO, GL_ONE, GL_ONE);
@@ -162,7 +161,8 @@ void RenderState::Update(bool forced)
 		for (int32_t i = 0; i < (int32_t)m_renderer->GetCurrentTextures().size(); i++)
 		{
 			// If a texture is not assigned, skip it.
-			if (m_renderer->GetCurrentTextures()[i].UserID == 0)
+			const auto& texture = m_renderer->GetCurrentTextures()[i];
+			if (texture == nullptr)
 				continue;
 
 			if (m_active.TextureFilterTypes[i] != m_next.TextureFilterTypes[i] || forced || m_active.TextureIDs[i] != m_next.TextureIDs[i])
@@ -171,16 +171,16 @@ void RenderState::Update(bool forced)
 
 				// for webngl
 #ifndef NDEBUG
-				//GLint bound = 0;
-				//glGetIntegerv(GL_TEXTURE_BINDING_2D, &bound);
-				//assert(bound > 0);
+				// GLint bound = 0;
+				// glGetIntegerv(GL_TEXTURE_BINDING_2D, &bound);
+				// assert(bound > 0);
 #endif
 
 				int32_t filter_ = (int32_t)m_next.TextureFilterTypes[i];
 
 				GLExt::glSamplerParameteri(m_samplers[i], GL_TEXTURE_MAG_FILTER, glfilterMag[filter_]);
 
-				if (m_renderer->GetCurrentTextures()[i].HasMipmap)
+				if (texture->GetHasMipmap())
 				{
 					GLExt::glSamplerParameteri(m_samplers[i], GL_TEXTURE_MIN_FILTER, glfilterMin[filter_]);
 				}
@@ -189,8 +189,8 @@ void RenderState::Update(bool forced)
 					GLExt::glSamplerParameteri(m_samplers[i], GL_TEXTURE_MIN_FILTER, glfilterMin_NoneMipmap[filter_]);
 				}
 
-				//glSamplerParameteri( m_samplers[i],  GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-				//glSamplerParameteri( m_samplers[i],  GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+				// glSamplerParameteri( m_samplers[i],  GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+				// glSamplerParameteri( m_samplers[i],  GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 
 				GLExt::glBindSampler(i, m_samplers[i]);
 			}
@@ -213,7 +213,8 @@ void RenderState::Update(bool forced)
 		for (int32_t i = 0; i < (int32_t)m_renderer->GetCurrentTextures().size(); i++)
 		{
 			// If a texture is not assigned, skip it.
-			if (m_renderer->GetCurrentTextures()[i].UserID == 0)
+			const auto& texture = m_renderer->GetCurrentTextures()[i];
+			if (texture == nullptr)
 				continue;
 
 			// always changes because a flag is assigned into a texture
@@ -234,7 +235,7 @@ void RenderState::Update(bool forced)
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, glfilterMag[filter_]);
 				GLCheckError();
 
-				if (m_renderer->GetCurrentTextures()[i].HasMipmap)
+				if (texture->GetHasMipmap())
 				{
 					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, glfilterMin[filter_]);
 				}

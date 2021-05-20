@@ -22,7 +22,8 @@ struct SpriteColorParameter
 		Parameter_DWORD = 0x7fffffff,
 	} type;
 
-	union {
+	union
+	{
 		struct
 		{
 
@@ -48,7 +49,8 @@ struct SpritePositionParameter
 		Parameter_DWORD = 0x7fffffff,
 	} type;
 
-	union {
+	union
+	{
 		struct
 		{
 
@@ -56,10 +58,10 @@ struct SpritePositionParameter
 
 		struct
 		{
-			Vec2f ll;
-			Vec2f lr;
-			Vec2f ul;
-			Vec2f ur;
+			SIMD::Vec2f ll;
+			SIMD::Vec2f lr;
+			SIMD::Vec2f ul;
+			SIMD::Vec2f ur;
 		} fixed;
 	};
 };
@@ -67,8 +69,7 @@ struct SpritePositionParameter
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-class EffectNodeSprite
-	: public EffectNodeImplemented
+class EffectNodeSprite : public EffectNodeImplemented
 {
 	friend class Manager;
 	friend class Effect;
@@ -82,7 +83,8 @@ public:
 
 		Color _originalColor;
 
-		union {
+		union
+		{
 			struct
 			{
 				Color _color;
@@ -107,11 +109,13 @@ public:
 
 		} allColorValues;
 
-		union {
+		union
+		{
 
 		} colorValues;
 
-		union {
+		union
+		{
 
 		} positionValues;
 	};
@@ -132,17 +136,17 @@ public:
 	{
 	}
 
-	void LoadRendererParameter(unsigned char*& pos, Setting* setting) override;
+	void LoadRendererParameter(unsigned char*& pos, const SettingRef& setting) override;
 
-	void BeginRendering(int32_t count, Manager* manager) override;
+	void BeginRendering(int32_t count, Manager* manager, void* userData) override;
 
-	void Rendering(const Instance& instance, const Instance* next_instance, Manager* manager) override;
+	void Rendering(const Instance& instance, const Instance* next_instance, Manager* manager, void* userData) override;
 
-	void EndRendering(Manager* manager) override;
+	void EndRendering(Manager* manager, void* userData) override;
 
-	void InitializeRenderedInstance(Instance& instance, Manager* manager) override;
+	void InitializeRenderedInstance(Instance& instance, InstanceGroup& instanceGroup, Manager* manager) override;
 
-	void UpdateRenderedInstance(Instance& instance, Manager* manager) override;
+	void UpdateRenderedInstance(Instance& instance, InstanceGroup& instanceGroup, Manager* manager) override;
 
 	eEffectNodeType GetType() const override
 	{

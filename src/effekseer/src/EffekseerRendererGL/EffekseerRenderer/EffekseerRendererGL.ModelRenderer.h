@@ -25,68 +25,44 @@ typedef ::Effekseer::ModelRenderer::NodeParameter efkModelNodeParam;
 typedef ::Effekseer::ModelRenderer::InstanceParameter efkModelInstanceParam;
 typedef ::Effekseer::Vector3D efkVector3D;
 
-class ModelRenderer
-	: public ::EffekseerRenderer::ModelRendererBase
+class ModelRenderer;
+typedef ::Effekseer::RefPtr<ModelRenderer> ModelRendererRef;
+
+class ModelRenderer : public ::EffekseerRenderer::ModelRendererBase
 {
 public:
-	enum eShaderAttrib
-	{
-		AttribPosition,
-		AttribNormal,
-		AttribBinormal,
-		AttribTangent,
-		AttribTexCoord,
-		AttribColor,
-#if defined(MODEL_SOFTWARE_INSTANCING)
-		AttribInstanceID,
-		AttribUVOffset,
-		AttribModelColor,
-#endif
-		NumAttribs,
-		NumVertexAttribs = AttribTexCoord + 1,
-	};
-	enum eShaderUniform
-	{
-		UniformProjectionMatrix,
-		UniformModelMatrix,
-#if !defined(MODEL_SOFTWARE_INSTANCING)
-		UniformUVOffset,
-		UniformModelColor,
-#endif
-		UniformColorTexture,
-		UniformNormalTexture,
-		UniformLightDirection,
-		UniformLightColor,
-		UniformLightAmbient,
-		Scale,
-		UVInversed,
-		UVInversedBack,
-		NumUniforms,
-	};
-
 	static const int32_t MaxInstanced = 20;
 
 private:
 	RendererImplemented* m_renderer;
 
-	Shader* m_shader_lighting_texture_normal;
-	Shader* m_shader_texture;
-	Shader* m_shader_distortion_texture;
+	VertexArray* m_va[6];
 
-	GLint m_uniformLoc[8][NumUniforms];
+	Shader* shader_ad_lit_ = nullptr;
+	Shader* shader_ad_unlit_ = nullptr;
+	Shader* shader_ad_distortion_ = nullptr;
 
-	VertexArray* m_va[8];
+	Shader* shader_lit_ = nullptr;
+	Shader* shader_unlit_ = nullptr;
+	Shader* shader_distortion_ = nullptr;
 
-	ModelRenderer(
-		RendererImplemented* renderer,
-		Shader* shader_lighting_texture_normal,
-		Shader* shader_texture,
-		Shader* shader_distortion_texture);
+	Backend::GraphicsDeviceRef graphicsDevice_ = nullptr;
+
+	template <int N>
+	void InitRenderer();
+
+	ModelRenderer(RendererImplemented* renderer,
+				  Shader* shader_ad_lit,
+				  Shader* shader_ad_unlit,
+				  Shader* shader_ad_distortion,
+				  Shader* shader_lighting_texture_normal,
+				  Shader* shader_texture,
+				  Shader* shader_distortion_texture);
 
 public:
 	virtual ~ModelRenderer();
 
-	static ModelRenderer* Create(RendererImplemented* renderer);
+	static ModelRendererRef Create(RendererImplemented* renderer);
 
 public:
 	void BeginRendering(const efkModelNodeParam& parameter, int32_t count, void* userData) override;

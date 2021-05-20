@@ -1,11 +1,11 @@
 # EffekseerForLove
 
-This project makes Effekseer (https://effekseer.github.io/en/) available for LÖVE (https://love2d.org/).
+This project makes Effekseer (https://effekseer.github.io/en/) available for LÖVE (https://love2d.org/). It is compatible with Effekseer 1.60c2.
 
 ## About
 The Effekseer OpenGL runtime is used as a base, with a simple wrapper for Lua
 access to the Effekseer Manager object. The original is availble here:
-https://effekseer.sakura.ne.jp/Releases/EffekseerRuntime160.zip
+https://github.com/effekseer/Effekseer/releases/download/160c2/EffekseerRuntime160c2.zip
 
 Note that Effekseer has its own internal OpenGL state that is separate from
 LÖVE's. It may be possible to have Effekseer render directly using

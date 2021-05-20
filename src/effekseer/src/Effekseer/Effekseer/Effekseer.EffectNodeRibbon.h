@@ -27,7 +27,8 @@ struct RibbonAllColorParameter
 		Parameter_DWORD = 0x7fffffff,
 	} type;
 
-	union {
+	union
+	{
 		struct
 		{
 			Color all;
@@ -55,7 +56,8 @@ struct RibbonColorParameter
 		Parameter_DWORD = 0x7fffffff,
 	} type;
 
-	union {
+	union
+	{
 		struct
 		{
 
@@ -79,7 +81,8 @@ struct RibbonPositionParameter
 		Parameter_DWORD = 0x7fffffff,
 	} type;
 
-	union {
+	union
+	{
 		struct
 		{
 
@@ -96,8 +99,7 @@ struct RibbonPositionParameter
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-class EffectNodeRibbon
-	: public EffectNodeImplemented
+class EffectNodeRibbon : public EffectNodeImplemented
 {
 public:
 	struct InstanceValues
@@ -106,7 +108,8 @@ public:
 		Color _color;
 		Color _original;
 
-		union {
+		union
+		{
 			struct
 			{
 				Color _color;
@@ -126,11 +129,13 @@ public:
 
 		} allColorValues;
 
-		union {
+		union
+		{
 
 		} colorValues;
 
-		union {
+		union
+		{
 
 		} positionValues;
 	};
@@ -163,21 +168,21 @@ public:
 	{
 	}
 
-	void LoadRendererParameter(unsigned char*& pos, Setting* setting) override;
+	void LoadRendererParameter(unsigned char*& pos, const SettingRef& setting) override;
 
-	void BeginRendering(int32_t count, Manager* manager) override;
+	void BeginRendering(int32_t count, Manager* manager, void* userData) override;
 
-	void BeginRenderingGroup(InstanceGroup* group, Manager* manager) override;
+	void BeginRenderingGroup(InstanceGroup* group, Manager* manager, void* userData) override;
 
-	void EndRenderingGroup(InstanceGroup* group, Manager* manager) override;
+	void EndRenderingGroup(InstanceGroup* group, Manager* manager, void* userData) override;
 
-	void Rendering(const Instance& instance, const Instance* next_instance, Manager* manager) override;
+	void Rendering(const Instance& instance, const Instance* next_instance, Manager* manager, void* userData) override;
 
-	void EndRendering(Manager* manager) override;
+	void EndRendering(Manager* manager, void* userData) override;
 
-	void InitializeRenderedInstance(Instance& instance, Manager* manager) override;
+	void InitializeRenderedInstance(Instance& instance, InstanceGroup& instanceGroup, Manager* manager) override;
 
-	void UpdateRenderedInstance(Instance& instance, Manager* manager) override;
+	void UpdateRenderedInstance(Instance& instance, InstanceGroup& instanceGroup, Manager* manager) override;
 
 	eEffectNodeType GetType() const override
 	{

@@ -9,8 +9,8 @@
 #include "../Effekseer.Color.h"
 #include "../Effekseer.Matrix43.h"
 #include "../Effekseer.Vector3D.h"
-#include "../SIMD/Effekseer.Mat43f.h"
-#include "../SIMD/Effekseer.Vec3f.h"
+#include "../SIMD/Mat43f.h"
+#include "../SIMD/Vec3f.h"
 
 //----------------------------------------------------------------------------------
 //
@@ -26,18 +26,18 @@ public:
 	struct NodeParameter
 	{
 		Effect* EffectPointer;
-		//int32_t				TextureIndex;
-		//AlphaBlendType			AlphaBlend;
-		//TextureFilterType	TextureFilter;
-		//TextureWrapType	TextureWrap;
+		// int32_t				TextureIndex;
+		// AlphaBlendType			AlphaBlend;
+		// TextureFilterType	TextureFilter;
+		// TextureWrapType	TextureWrap;
 
-		//bool				Distortion;
-		//float				DistortionIntensity;
+		// bool				Distortion;
+		// float				DistortionIntensity;
 	};
 
 	struct InstanceParameter
 	{
-		Vec3f Position;
+		SIMD::Vec3f Position;
 		float Size;
 		Color ParticleColor;
 	};

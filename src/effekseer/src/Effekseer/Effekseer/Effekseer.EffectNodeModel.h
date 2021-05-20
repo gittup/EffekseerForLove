@@ -6,6 +6,7 @@
 // Include
 //----------------------------------------------------------------------------------
 #include "Effekseer.EffectNode.h"
+#include "Renderer/Effekseer.ModelRenderer.h"
 
 //----------------------------------------------------------------------------------
 //
@@ -19,8 +20,8 @@ namespace Effekseer
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-class EffectNodeModel
-	: public EffectNodeImplemented
+
+class EffectNodeModel : public EffectNodeImplemented
 {
 	friend class Manager;
 	friend class Effect;
@@ -33,7 +34,8 @@ public:
 		Color _color;
 		Color _original;
 
-		union {
+		union
+		{
 			struct
 			{
 				Color _color;
@@ -74,6 +76,8 @@ public:
 
 	StandardColorParameter AllColor;
 
+	ModelReferenceType Mode = ModelReferenceType::File;
+
 	EffectNodeModel(Effect* effect, unsigned char*& pos)
 		: EffectNodeImplemented(effect, pos)
 	{
@@ -83,17 +87,17 @@ public:
 	{
 	}
 
-	void LoadRendererParameter(unsigned char*& pos, Setting* setting) override;
+	void LoadRendererParameter(unsigned char*& pos, const SettingRef& setting) override;
 
-	void BeginRendering(int32_t count, Manager* manager) override;
+	void BeginRendering(int32_t count, Manager* manager, void* userData) override;
 
-	void Rendering(const Instance& instance, const Instance* next_instance, Manager* manager) override;
+	void Rendering(const Instance& instance, const Instance* next_instance, Manager* manager, void* userData) override;
 
-	void EndRendering(Manager* manager) override;
+	void EndRendering(Manager* manager, void* userData) override;
 
-	void InitializeRenderedInstance(Instance& instance, Manager* manager) override;
+	void InitializeRenderedInstance(Instance& instance, InstanceGroup& instanceGroup, Manager* manager) override;
 
-	void UpdateRenderedInstance(Instance& instance, Manager* manager) override;
+	void UpdateRenderedInstance(Instance& instance, InstanceGroup& instanceGroup, Manager* manager) override;
 
 	eEffectNodeType GetType() const override
 	{

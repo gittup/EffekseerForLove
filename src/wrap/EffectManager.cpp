@@ -71,26 +71,24 @@ void *file_read(const char *path, size_t &size)
 	return data;
 }
 
-static ::EffekseerRendererGL::Renderer *renderer;
-static ::Effekseer::Manager *manager;
 static bool g_warn_on_missing_textures = false;
 
 class LoveTextureLoader : public ::Effekseer::TextureLoader
 {
 public:
-	LoveTextureLoader()
+	::Effekseer::Backend::GraphicsDeviceRef _graphicsDevice;
+	LoveTextureLoader(::Effekseer::Backend::GraphicsDeviceRef graphicsDevice)
+		: _graphicsDevice(graphicsDevice)
 	{
 	}
 	virtual ~LoveTextureLoader() = default;
 
-	Effekseer::TextureData* Load(const EFK_CHAR* efkpath, ::Effekseer::TextureType textureType) override
+	Effekseer::TextureRef Load(const char16_t* efkpath, ::Effekseer::TextureType textureType) override
 	{
 		char path[256];
-		::Effekseer::ConvertUtf16ToUtf8((int8_t*)path, 256, (const int16_t*)efkpath);
-		auto textureData = new Effekseer::TextureData();
-		textureData->UserPtr = nullptr;
-		textureData->TextureFormat = Effekseer::TextureFormatType::ABGR8;
-		textureData->HasMipmap = false;
+		::Effekseer::ConvertUtf16ToUtf8(path, 256, efkpath);
+		int width;
+		int height;
 
 		lua_prep("love.image.newImageData");
 		lua_pushstring(L, path);
@@ -106,56 +104,38 @@ public:
 		lua_getfield(L, -1, "getWidth");
 		lua_pushvalue(L, -2);
 		lua_call(L, 1, 1);
-		textureData->Width = lua_tonumber(L, -1);
+		width = lua_tonumber(L, -1);
 		lua_pop(L, 1);
 
 		lua_getfield(L, -1, "getHeight");
 		lua_pushvalue(L, -2);
 		lua_call(L, 1, 1);
-		textureData->Height = lua_tonumber(L, -1);
+		height = lua_tonumber(L, -1);
 		lua_pop(L, 1);
 
-		const void *data;
+		const char *data;
 		lua_getfield(L, -1, "getPointer");
 		lua_pushvalue(L, -2);
 		lua_call(L, 1, 1);
-		data = lua_topointer(L, -1);
+		data = (const char*)lua_topointer(L, -1);
 		lua_pop(L, 1);
 
-		GLuint colorFormat = GL_RGBA;
-		GLuint texture = 0;
-		glGenTextures(1, &texture);
-		glBindTexture(GL_TEXTURE_2D, texture);
-		glTexImage2D(GL_TEXTURE_2D,
-			     0,
-			     colorFormat,
-			     textureData->Width,
-			     textureData->Height,
-			     0,
-			     GL_RGBA,
-			     GL_UNSIGNED_BYTE,
-			     data);
-		GLExt::glGenerateMipmap(GL_TEXTURE_2D);
-		glBindTexture(GL_TEXTURE_2D, 0);
+		::Effekseer::Backend::TextureParameter param;
+		param.Format = ::Effekseer::Backend::TextureFormatType::R8G8B8A8_UNORM;
+		param.GenerateMipmap = true;
+		param.Size[0] = width;
+		param.Size[1] = height;
+		param.InitialData.assign(data, data + width * height * 4);
 
-		textureData->UserID = texture;
+		auto texture = ::Effekseer::MakeRefPtr<::Effekseer::Texture>();
+		texture->SetBackend(_graphicsDevice->CreateTexture(param));
 
 		lua_pop(L, 1); // Pop image data
-		return textureData;
+		return texture;
 	}
 
-	void Unload(Effekseer::TextureData* data) override
+	void Unload(Effekseer::TextureRef data) override
 	{
-		if (data != nullptr && data->UserPtr != nullptr)
-		{
-			GLuint texture = static_cast<GLuint>(data->UserID);
-			glDeleteTextures(1, &texture);
-		}
-
-		if (data != nullptr)
-		{
-			delete data;
-		}
 	}
 };
 
@@ -176,7 +156,7 @@ public:
 		size = 0;
 
 		char path[256];
-		::Effekseer::ConvertUtf16ToUtf8((int8_t*)path, 256, (const int16_t*)efkpath);
+		::Effekseer::ConvertUtf16ToUtf8(path, 256, efkpath);
 		size_t fdsize = 0;
 		data = file_read(path, fdsize);
 		size = fdsize;
@@ -201,24 +181,22 @@ public:
 	{
 	}
 
-	void *Load(const EFK_CHAR* efkpath)
+	::Effekseer::ModelRef Load(const EFK_CHAR* efkpath)
 	{
 		void *data = NULL;
 		int32_t size = 0;
 
 		char path[256];
-		::Effekseer::ConvertUtf16ToUtf8((int8_t*)path, 256, (const int16_t*)efkpath);
+		::Effekseer::ConvertUtf16ToUtf8(path, 256, efkpath);
 		size_t fdsize = 0;
 		data = file_read(path, fdsize);
 		size = fdsize;
-		Model *model = new Model(data, size);
+		auto model = ::Effekseer::MakeRefPtr<::Effekseer::Model>((const uint8_t*)data, size);
 		return model;
 	}
 
-	void Unload(void* data)
+	void Unload(::Effekseer::ModelRef data)
 	{
-		Model *model = (Model*)data;
-		delete model;
 	}
 };
 
@@ -226,14 +204,10 @@ EffectManager::EffectManager(bool warn_on_missing_textures)
 {
 	g_warn_on_missing_textures = warn_on_missing_textures;
 #ifdef EMSCRIPTEN
-	renderer = ::EffekseerRendererGL::Renderer::Create(8000, EffekseerRendererGL::OpenGLDeviceType::Emscripten);
+	renderer = ::EffekseerRendererGL::Renderer::Create(8000, EffekseerRendererGL::OpenGLDeviceType::OpenGLES2);
 #else
 	renderer = ::EffekseerRendererGL::Renderer::Create(8000, EffekseerRendererGL::OpenGLDeviceType::OpenGL3);
 #endif
-
-	if(!renderer) {
-		throw "Unable to create Effekseer Renderer.\n";
-	}
 
 	manager = ::Effekseer::Manager::Create(8000);
 
@@ -243,20 +217,21 @@ EffectManager::EffectManager(bool warn_on_missing_textures)
 	manager->SetTrackRenderer(renderer->CreateTrackRenderer());
 	manager->SetModelRenderer(renderer->CreateModelRenderer());
 
-	manager->SetEffectLoader(new LoveEffectLoader());
-	manager->SetTextureLoader(new LoveTextureLoader());
-	manager->SetModelLoader(new LoveModelLoader());
+	manager->SetEffectLoader(::Effekseer::EffectLoaderRef(new LoveEffectLoader()));
+	manager->SetTextureLoader(::Effekseer::TextureLoaderRef(new LoveTextureLoader(renderer->GetGraphicsDevice())));
+	manager->SetModelLoader(::Effekseer::ModelLoaderRef(new LoveModelLoader()));
 	manager->SetMaterialLoader(renderer->CreateMaterialLoader());
+ 	manager->SetCurveLoader(Effekseer::MakeRefPtr<Effekseer::CurveLoader>());
 
 	updateCounter = 0.0f;
 }
 
-::Effekseer::Manager *EffectManager::getManager()
+::Effekseer::ManagerRef EffectManager::getManager()
 {
 	return this->manager;
 }
 
-::EffekseerRendererGL::Renderer *EffectManager::getRenderer()
+::EffekseerRendererGL::RendererRef EffectManager::getRenderer()
 {
 	return this->renderer;
 }
@@ -326,13 +301,31 @@ void EffectManager::flushStreamDraws()
 
 void EffectManager::draw()
 {
+	setProjection();
+
 	GLint prog;
 	glGetIntegerv(GL_CURRENT_PROGRAM, &prog);
 
-	setProjection();
+	std::vector<bool> vertex_enabled;
+	GLint num;
+	glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &num);
+	for(size_t i=0; i<num; i++) {
+		GLint enabled;
+		GLExt::glGetVertexAttribiv(i, GL_VERTEX_ATTRIB_ARRAY_ENABLED, &enabled);
+		GLExt::glDisableVertexAttribArray(i);
+		vertex_enabled.push_back(enabled);
+	}
 
 	renderer->BeginRendering();
 	manager->Draw();
 	renderer->EndRendering();
+
 	GLExt::glUseProgram(prog); // TODO Effekseer changes the glUseProgram to something else, so we need to restore it, otherwise everything done in love.draw() doesn't show up.
+	for(size_t i=0; i<vertex_enabled.size(); i++) {
+		if(vertex_enabled[i]) {
+			GLExt::glEnableVertexAttribArray(i);
+		} else {
+			GLExt::glDisableVertexAttribArray(i);
+		}
+	}
 }

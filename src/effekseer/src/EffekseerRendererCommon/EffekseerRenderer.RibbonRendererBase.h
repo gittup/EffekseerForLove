@@ -5,7 +5,6 @@
 //----------------------------------------------------------------------------------
 // Include
 //----------------------------------------------------------------------------------
-#include <Effekseer.Internal.h>
 #include <Effekseer.h>
 #include <assert.h>
 #include <string.h>
@@ -26,12 +25,10 @@ namespace EffekseerRenderer
 //----------------------------------------------------------------------------------
 typedef ::Effekseer::RibbonRenderer::NodeParameter efkRibbonNodeParam;
 typedef ::Effekseer::RibbonRenderer::InstanceParameter efkRibbonInstanceParam;
-typedef ::Effekseer::Vec3f efkVector3D;
+typedef ::Effekseer::SIMD::Vec3f efkVector3D;
 
-template <typename RENDERER, typename VERTEX_NORMAL, typename VERTEX_DISTORTION>
-class RibbonRendererBase
-	: public ::Effekseer::RibbonRenderer,
-	  public ::Effekseer::AlignedAllocationPolicy<16>
+template <typename RENDERER, bool FLIP_RGB_FLAG>
+class RibbonRendererBase : public ::Effekseer::RibbonRenderer, public ::Effekseer::SIMD::AlignedAllocationPolicy<16>
 {
 private:
 protected:
@@ -43,36 +40,14 @@ protected:
 
 	efkRibbonNodeParam innstancesNodeParam;
 	Effekseer::CustomAlignedVector<efkRibbonInstanceParam> instances;
-	SplineGenerator spline_left;
-	SplineGenerator spline_right;
+	Effekseer::SplineGenerator spline_left;
+	Effekseer::SplineGenerator spline_right;
 
 	int32_t vertexCount_ = 0;
 	int32_t stride_ = 0;
 
 	int32_t customData1Count_ = 0;
 	int32_t customData2Count_ = 0;
-
-	enum class VertexType
-	{
-		Normal,
-		Distortion,
-		Dynamic,
-	};
-
-	VertexType GetVertexType(const VERTEX_NORMAL* v)
-	{
-		return VertexType::Normal;
-	}
-
-	VertexType GetVertexType(const VERTEX_DISTORTION* v)
-	{
-		return VertexType::Distortion;
-	}
-
-	VertexType GetVertexType(const DynamicVertex* v)
-	{
-		return VertexType::Dynamic;
-	}
 
 	template <typename VERTEX, int TARGET>
 	void AssignUV(StrideView<VERTEX> v, float uvX1, float uvX2, float uvY1, float uvY2)
@@ -91,7 +66,6 @@ protected:
 			v[3].UV[0] = uvX2;
 			v[3].UV[1] = uvY2;
 		}
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 		else if (TARGET == 1)
 		{
 			v[0].UV2[0] = uvX1;
@@ -108,34 +82,74 @@ protected:
 		}
 		else if (TARGET == 2)
 		{
-			v[0].AlphaUV[0] = uvX1;
-			v[0].AlphaUV[1] = uvY1;
+			SetVertexAlphaUV(v[0], uvX1, 0);
+			SetVertexAlphaUV(v[0], uvY1, 1);
 
-			v[1].AlphaUV[0] = uvX2;
-			v[1].AlphaUV[1] = uvY1;
+			SetVertexAlphaUV(v[1], uvX2, 0);
+			SetVertexAlphaUV(v[1], uvY1, 1);
 
-			v[2].AlphaUV[0] = uvX1;
-			v[2].AlphaUV[1] = uvY2;
+			SetVertexAlphaUV(v[2], uvX1, 0);
+			SetVertexAlphaUV(v[2], uvY2, 1);
 
-			v[3].AlphaUV[0] = uvX2;
-			v[3].AlphaUV[1] = uvY2;
+			SetVertexAlphaUV(v[3], uvX2, 0);
+			SetVertexAlphaUV(v[3], uvY2, 1);
 		}
-#else
-		else
+		else if (TARGET == 3)
 		{
-			v[0].UV2[0] = uvX1;
-			v[0].UV2[1] = uvY1;
+			SetVertexUVDistortionUV(v[0], uvX1, 0);
+			SetVertexUVDistortionUV(v[0], uvY1, 1);
 
-			v[1].UV2[0] = uvX2;
-			v[1].UV2[1] = uvY1;
+			SetVertexUVDistortionUV(v[1], uvX2, 0);
+			SetVertexUVDistortionUV(v[1], uvY1, 1);
 
-			v[2].UV2[0] = uvX1;
-			v[2].UV2[1] = uvY2;
+			SetVertexUVDistortionUV(v[2], uvX1, 0);
+			SetVertexUVDistortionUV(v[2], uvY2, 1);
 
-			v[3].UV2[0] = uvX2;
-			v[3].UV2[1] = uvY2;
+			SetVertexUVDistortionUV(v[3], uvX2, 0);
+			SetVertexUVDistortionUV(v[3], uvY2, 1);
 		}
-#endif
+		else if (TARGET == 4)
+		{
+			SetVertexBlendUV(v[0], uvX1, 0);
+			SetVertexBlendUV(v[0], uvY1, 1);
+
+			SetVertexBlendUV(v[1], uvX2, 0);
+			SetVertexBlendUV(v[1], uvY1, 1);
+
+			SetVertexBlendUV(v[2], uvX1, 0);
+			SetVertexBlendUV(v[2], uvY2, 1);
+
+			SetVertexBlendUV(v[3], uvX2, 0);
+			SetVertexBlendUV(v[3], uvY2, 1);
+		}
+		else if (TARGET == 5)
+		{
+			SetVertexBlendAlphaUV(v[0], uvX1, 0);
+			SetVertexBlendAlphaUV(v[0], uvY1, 1);
+
+			SetVertexBlendAlphaUV(v[1], uvX2, 0);
+			SetVertexBlendAlphaUV(v[1], uvY1, 1);
+
+			SetVertexBlendAlphaUV(v[2], uvX1, 0);
+			SetVertexBlendAlphaUV(v[2], uvY2, 1);
+
+			SetVertexBlendAlphaUV(v[3], uvX2, 0);
+			SetVertexBlendAlphaUV(v[3], uvY2, 1);
+		}
+		else if (TARGET == 6)
+		{
+			SetVertexBlendUVDistortionUV(v[0], uvX1, 0);
+			SetVertexBlendUVDistortionUV(v[0], uvY1, 1);
+
+			SetVertexBlendUVDistortionUV(v[1], uvX2, 0);
+			SetVertexBlendUVDistortionUV(v[1], uvY1, 1);
+
+			SetVertexBlendUVDistortionUV(v[2], uvX1, 0);
+			SetVertexBlendUVDistortionUV(v[2], uvY2, 1);
+
+			SetVertexBlendUVDistortionUV(v[3], uvX2, 0);
+			SetVertexBlendUVDistortionUV(v[3], uvY2, 1);
+		}
 	}
 
 	template <typename VERTEX, int TARGET>
@@ -160,7 +174,6 @@ protected:
 					uvy = param.UV.Y;
 					uvh = param.UV.Height;
 				}
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 				else if (TARGET == 2)
 				{
 					uvx = param.AlphaUV.X;
@@ -168,7 +181,34 @@ protected:
 					uvy = param.AlphaUV.Y;
 					uvh = param.AlphaUV.Height;
 				}
-#endif
+				else if (TARGET == 3)
+				{
+					uvx = param.UVDistortionUV.X;
+					uvw = param.UVDistortionUV.Width;
+					uvy = param.UVDistortionUV.Y;
+					uvh = param.UVDistortionUV.Height;
+				}
+				else if (TARGET == 4)
+				{
+					uvx = param.BlendUV.X;
+					uvw = param.BlendUV.Width;
+					uvy = param.BlendUV.Y;
+					uvh = param.BlendUV.Height;
+				}
+				else if (TARGET == 5)
+				{
+					uvx = param.BlendAlphaUV.X;
+					uvw = param.BlendAlphaUV.Width;
+					uvy = param.BlendAlphaUV.Y;
+					uvh = param.BlendAlphaUV.Height;
+				}
+				else if (TARGET == 6)
+				{
+					uvx = param.BlendUVDistortionUV.X;
+					uvw = param.BlendUVDistortionUV.Width;
+					uvy = param.BlendUVDistortionUV.Y;
+					uvh = param.BlendUVDistortionUV.Height;
+				}
 
 				for (int32_t sploop = 0; sploop < parameter.SplineDivision; sploop++)
 				{
@@ -205,7 +245,6 @@ protected:
 					uvy = param.UV.Y;
 					uvh = param.UV.Height;
 				}
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 				else if (TARGET == 2)
 				{
 					uvx = param.AlphaUV.X;
@@ -213,7 +252,34 @@ protected:
 					uvy = param.AlphaUV.Y;
 					uvh = param.AlphaUV.Height;
 				}
-#endif
+				else if (TARGET == 3)
+				{
+					uvx = param.UVDistortionUV.X;
+					uvw = param.UVDistortionUV.Width;
+					uvy = param.UVDistortionUV.Y;
+					uvh = param.UVDistortionUV.Height;
+				}
+				else if (TARGET == 4)
+				{
+					uvx = param.BlendUV.X;
+					uvw = param.BlendUV.Width;
+					uvy = param.BlendUV.Y;
+					uvh = param.BlendUV.Height;
+				}
+				else if (TARGET == 5)
+				{
+					uvx = param.BlendAlphaUV.X;
+					uvw = param.BlendAlphaUV.Width;
+					uvy = param.BlendAlphaUV.Y;
+					uvh = param.BlendAlphaUV.Height;
+				}
+				else if (TARGET == 6)
+				{
+					uvx = param.BlendUVDistortionUV.X;
+					uvw = param.BlendUVDistortionUV.Width;
+					uvy = param.BlendUVDistortionUV.Y;
+					uvh = param.BlendUVDistortionUV.Height;
+				}
 
 				if (loop < uvParam.TileEdgeTail)
 				{
@@ -245,15 +311,15 @@ protected:
 
 					for (int32_t sploop = 0; sploop < parameter.SplineDivision; sploop++)
 					{
-						float percent1 = (float)((param.InstanceIndex - (param.InstanceCount - 1 - uvParam.TileEdgeHead)) *
-													 parameter.SplineDivision +
-												 sploop) /
-										 (float)((uvParam.TileEdgeHead) * parameter.SplineDivision);
+						float percent1 =
+							(float)((param.InstanceIndex - (param.InstanceCount - 1 - uvParam.TileEdgeHead)) * parameter.SplineDivision +
+									sploop) /
+							(float)((uvParam.TileEdgeHead) * parameter.SplineDivision);
 
-						float percent2 = (float)((param.InstanceIndex - (param.InstanceCount - 1 - uvParam.TileEdgeHead)) *
-													 parameter.SplineDivision +
-												 sploop + 1) /
-										 (float)((uvParam.TileEdgeHead) * parameter.SplineDivision);
+						float percent2 =
+							(float)((param.InstanceIndex - (param.InstanceCount - 1 - uvParam.TileEdgeHead)) * parameter.SplineDivision +
+									sploop + 1) /
+							(float)((uvParam.TileEdgeHead) * parameter.SplineDivision);
 
 						auto uvX1 = uvx;
 						auto uvX2 = uvx + uvw;
@@ -272,9 +338,6 @@ protected:
 
 					for (int32_t sploop = 0; sploop < parameter.SplineDivision; sploop++)
 					{
-						bool isFirst = param.InstanceIndex == 0 && sploop == 0;
-						bool isLast = param.InstanceIndex == (param.InstanceCount - 1);
-
 						float percent1 = (float)(sploop) / (float)(parameter.SplineDivision);
 
 						float percent2 = (float)(sploop + 1) / (float)(parameter.SplineDivision);
@@ -293,8 +356,8 @@ protected:
 		}
 	}
 
-	template <typename VERTEX>
-	void RenderSplines(const ::Effekseer::Mat44f& camera)
+	template <typename VERTEX, bool FLIP_RGB>
+	void RenderSplines(const ::Effekseer::SIMD::Mat44f& camera)
 	{
 		if (instances.size() == 0)
 		{
@@ -302,8 +365,6 @@ protected:
 		}
 
 		auto& parameter = innstancesNodeParam;
-
-		auto vertexType = GetVertexType((VERTEX*)m_ringBufferData);
 
 		// Calculate spline
 		if (parameter.SplineDivision > 1)
@@ -320,10 +381,16 @@ protected:
 
 				if (parameter.ViewpointDependent)
 				{
-					::Effekseer::Mat43f mat = param.SRTMatrix43;
-					::Effekseer::Vec3f s;
-					::Effekseer::Mat43f r;
-					::Effekseer::Vec3f t;
+					::Effekseer::SIMD::Mat43f mat = param.SRTMatrix43;
+
+					if (parameter.EnableViewOffset == true)
+					{
+						ApplyViewOffset(mat, camera, param.ViewOffsetDistance);
+					}
+
+					::Effekseer::SIMD::Vec3f s;
+					::Effekseer::SIMD::Mat43f r;
+					::Effekseer::SIMD::Vec3f t;
 					mat.GetSRT(s, r, t);
 
 					ApplyDepthParameters(r,
@@ -338,37 +405,52 @@ protected:
 					pl.SetX(pl.GetX() * s.GetX());
 					pr.SetX(pr.GetX() * s.GetX());
 
-					::Effekseer::Vec3f F;
-					::Effekseer::Vec3f R;
-					::Effekseer::Vec3f U;
+					::Effekseer::SIMD::Vec3f F;
+					::Effekseer::SIMD::Vec3f R;
+					::Effekseer::SIMD::Vec3f U;
 
-					U = ::Effekseer::Vec3f(r.X.GetY(), r.Y.GetY(), r.X.GetY());
-					F = ::Effekseer::Vec3f(-m_renderer->GetCameraFrontDirection()).Normalize();
-					R = ::Effekseer::Vec3f::Cross(U, F).Normalize();
-					F = ::Effekseer::Vec3f::Cross(R, U).Normalize();
+					U = ::Effekseer::SIMD::Vec3f(r.X.GetY(), r.Y.GetY(), r.X.GetY());
+					F = ::Effekseer::SIMD::Vec3f(-m_renderer->GetCameraFrontDirection()).Normalize();
+					R = ::Effekseer::SIMD::Vec3f::Cross(U, F).Normalize();
+					F = ::Effekseer::SIMD::Vec3f::Cross(R, U).Normalize();
 
-					::Effekseer::Mat43f mat_rot(
-						-R.GetX(), -R.GetY(), -R.GetZ(), U.GetX(), U.GetY(), U.GetZ(), F.GetX(), F.GetY(), F.GetZ(), t.GetX(), t.GetY(), t.GetZ());
+					::Effekseer::SIMD::Mat43f mat_rot(-R.GetX(),
+													  -R.GetY(),
+													  -R.GetZ(),
+													  U.GetX(),
+													  U.GetY(),
+													  U.GetZ(),
+													  F.GetX(),
+													  F.GetY(),
+													  F.GetZ(),
+													  t.GetX(),
+													  t.GetY(),
+													  t.GetZ());
 
-					pl = ::Effekseer::Vec3f::Transform(pl, mat_rot);
-					pr = ::Effekseer::Vec3f::Transform(pr, mat_rot);
+					pl = ::Effekseer::SIMD::Vec3f::Transform(pl, mat_rot);
+					pr = ::Effekseer::SIMD::Vec3f::Transform(pr, mat_rot);
 
 					spline_left.AddVertex(pl);
 					spline_right.AddVertex(pr);
 				}
 				else
 				{
-					::Effekseer::Mat43f mat = param.SRTMatrix43;
+					::Effekseer::SIMD::Mat43f mat = param.SRTMatrix43;
+
+					if (parameter.EnableViewOffset == true)
+					{
+						ApplyViewOffset(mat, camera, param.ViewOffsetDistance);
+					}
 
 					ApplyDepthParameters(mat,
 										 m_renderer->GetCameraFrontDirection(),
 										 m_renderer->GetCameraPosition(),
-										 //s,
+										 // s,
 										 parameter.DepthParameterPtr,
 										 parameter.IsRightHand);
 
-					pl = ::Effekseer::Vec3f::Transform(pl, mat);
-					pr = ::Effekseer::Vec3f::Transform(pr, mat);
+					pl = ::Effekseer::SIMD::Vec3f::Transform(pl, mat);
+					pr = ::Effekseer::SIMD::Vec3f::Transform(pr, mat);
 
 					spline_left.AddVertex(pl);
 					spline_right.AddVertex(pr);
@@ -396,8 +478,8 @@ protected:
 					verteies[0].Pos = ToStruct(spline_left.GetValue(param.InstanceIndex + sploop / (float)parameter.SplineDivision));
 					verteies[1].Pos = ToStruct(spline_right.GetValue(param.InstanceIndex + sploop / (float)parameter.SplineDivision));
 
-					verteies[0].SetColor(Effekseer::Color::Lerp(param.Colors[0], param.Colors[2], percent_instance));
-					verteies[1].SetColor(Effekseer::Color::Lerp(param.Colors[1], param.Colors[3], percent_instance));
+					verteies[0].SetColor(Effekseer::Color::Lerp(param.Colors[0], param.Colors[2], percent_instance), FLIP_RGB);
+					verteies[1].SetColor(Effekseer::Color::Lerp(param.Colors[1], param.Colors[3], percent_instance), FLIP_RGB);
 				}
 				else
 				{
@@ -406,23 +488,24 @@ protected:
 						verteies[i].Pos.X = param.Positions[i];
 						verteies[i].Pos.Y = 0.0f;
 						verteies[i].Pos.Z = 0.0f;
-						verteies[i].SetColor(param.Colors[i]);
-
-#ifdef __EFFEKSEER_BUILD_VERSION16__
-						verteies[i].FlipbookIndexAndNextRate = param.FlipbookIndexAndNextRate;
-						verteies[i].AlphaThreshold = param.AlphaThreshold;
-#endif
+						verteies[i].SetColor(param.Colors[i], FLIP_RGB);
+						verteies[i].SetFlipbookIndexAndNextRate(param.FlipbookIndexAndNextRate);
+						verteies[i].SetAlphaThreshold(param.AlphaThreshold);
 					}
 				}
 
-				float percent = (float)(param.InstanceIndex * parameter.SplineDivision + sploop) / (float)((param.InstanceCount - 1) * parameter.SplineDivision);
-
 				if (parameter.ViewpointDependent)
 				{
-					::Effekseer::Mat43f mat = param.SRTMatrix43;
-					::Effekseer::Vec3f s;
-					::Effekseer::Mat43f r;
-					::Effekseer::Vec3f t;
+					::Effekseer::SIMD::Mat43f mat = param.SRTMatrix43;
+
+					if (parameter.EnableViewOffset == true)
+					{
+						ApplyViewOffset(mat, camera, param.ViewOffsetDistance);
+					}
+
+					::Effekseer::SIMD::Vec3f s;
+					::Effekseer::SIMD::Mat43f r;
+					::Effekseer::SIMD::Vec3f t;
 					mat.GetSRT(s, r, t);
 
 					ApplyDepthParameters(r,
@@ -443,22 +526,32 @@ protected:
 							verteies[i].Pos.X = verteies[i].Pos.X * s.GetX();
 						}
 
-						::Effekseer::Vec3f F;
-						::Effekseer::Vec3f R;
-						::Effekseer::Vec3f U;
+						::Effekseer::SIMD::Vec3f F;
+						::Effekseer::SIMD::Vec3f R;
+						::Effekseer::SIMD::Vec3f U;
 
-						U = ::Effekseer::Vec3f(r.X.GetY(), r.Y.GetY(), r.Z.GetY());
+						U = ::Effekseer::SIMD::Vec3f(r.X.GetY(), r.Y.GetY(), r.Z.GetY());
 
-						F = ::Effekseer::Vec3f(-m_renderer->GetCameraFrontDirection()).Normalize();
-						R = ::Effekseer::Vec3f::Cross(U, F).Normalize();
-						F = ::Effekseer::Vec3f::Cross(R, U).Normalize();
+						F = ::Effekseer::SIMD::Vec3f(-m_renderer->GetCameraFrontDirection()).Normalize();
+						R = ::Effekseer::SIMD::Vec3f::Cross(U, F).Normalize();
+						F = ::Effekseer::SIMD::Vec3f::Cross(R, U).Normalize();
 
-						::Effekseer::Mat43f mat_rot(
-							-R.GetX(), -R.GetY(), -R.GetZ(), U.GetX(), U.GetY(), U.GetZ(), F.GetX(), F.GetY(), F.GetZ(), t.GetX(), t.GetY(), t.GetZ());
+						::Effekseer::SIMD::Mat43f mat_rot(-R.GetX(),
+														  -R.GetY(),
+														  -R.GetZ(),
+														  U.GetX(),
+														  U.GetY(),
+														  U.GetZ(),
+														  F.GetX(),
+														  F.GetY(),
+														  F.GetZ(),
+														  t.GetX(),
+														  t.GetY(),
+														  t.GetZ());
 
 						for (int i = 0; i < 2; i++)
 						{
-							verteies[i].Pos = ToStruct(::Effekseer::Vec3f::Transform(verteies[i].Pos, mat_rot));
+							verteies[i].Pos = ToStruct(::Effekseer::SIMD::Vec3f::Transform(verteies[i].Pos, mat_rot));
 						}
 					}
 				}
@@ -469,18 +562,23 @@ protected:
 					}
 					else
 					{
-						::Effekseer::Mat43f mat = param.SRTMatrix43;
+						::Effekseer::SIMD::Mat43f mat = param.SRTMatrix43;
+
+						if (parameter.EnableViewOffset == true)
+						{
+							ApplyViewOffset(mat, camera, param.ViewOffsetDistance);
+						}
 
 						ApplyDepthParameters(mat,
 											 m_renderer->GetCameraFrontDirection(),
 											 m_renderer->GetCameraPosition(),
-											 //s,
+											 // s,
 											 parameter.DepthParameterPtr,
 											 parameter.IsRightHand);
 
 						for (int i = 0; i < 2; i++)
 						{
-							verteies[i].Pos = ToStruct(::Effekseer::Vec3f::Transform(verteies[i].Pos, mat));
+							verteies[i].Pos = ToStruct(::Effekseer::SIMD::Vec3f::Transform(verteies[i].Pos, mat));
 						}
 					}
 				}
@@ -511,27 +609,28 @@ protected:
 		// calculate UV
 		AssignUVs<VERTEX, 0>(parameter, verteies);
 
-		if (vertexType == VertexType::Dynamic)
+		if (VertexUV2Required<VERTEX>())
 		{
 			AssignUVs<VERTEX, 1>(parameter, verteies);
 		}
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 		AssignUVs<VERTEX, 2>(parameter, verteies);
-#endif
+		AssignUVs<VERTEX, 3>(parameter, verteies);
+		AssignUVs<VERTEX, 4>(parameter, verteies);
+		AssignUVs<VERTEX, 5>(parameter, verteies);
+		AssignUVs<VERTEX, 6>(parameter, verteies);
 
-		// Apply distortion
-		if (vertexType == VertexType::Distortion)
+		if (VertexNormalRequired<VERTEX>())
 		{
-			StrideView<VERTEX_DISTORTION> vs_(m_ringBufferData, stride_, vertexCount_);
-			Effekseer::Vec3f axisBefore;
+			StrideView<VERTEX> vs_(m_ringBufferData, stride_, vertexCount_);
+			Effekseer::SIMD::Vec3f axisBefore{};
 
 			for (size_t i = 0; i < (instances.size() - 1) * parameter.SplineDivision + 1; i++)
 			{
 				bool isFirst_ = (i == 0);
 				bool isLast_ = (i == ((instances.size() - 1) * parameter.SplineDivision));
 
-				Effekseer::Vec3f axis;
+				Effekseer::SIMD::Vec3f axis;
 
 				if (isFirst_)
 				{
@@ -545,7 +644,7 @@ protected:
 				}
 				else
 				{
-					Effekseer::Vec3f axisOld = axisBefore;
+					Effekseer::SIMD::Vec3f axisOld = axisBefore;
 					axis = (vs_[5].Pos - vs_[3].Pos);
 					axis = SafeNormalize(axis);
 					axisBefore = axis;
@@ -554,66 +653,10 @@ protected:
 					axis = SafeNormalize(axis);
 				}
 
-				Effekseer::Vec3f tangent = vs_[1].Pos - vs_[0].Pos;
-				tangent = tangent.Normalize();
-
-				if (isFirst_)
-				{
-					vs_[0].Binormal = vs_[1].Binormal = ToStruct(axis);
-					vs_[0].Tangent = vs_[1].Tangent = ToStruct(tangent);
-					vs_ += 2;
-				}
-				else if (isLast_)
-				{
-					vs_[0].Binormal = vs_[1].Binormal = ToStruct(axis);
-					vs_[0].Tangent = vs_[1].Tangent = ToStruct(tangent);
-					vs_ += 2;
-				}
-				else
-				{
-					vs_[0].Binormal = vs_[1].Binormal = vs_[2].Binormal = vs_[3].Binormal = ToStruct(axis);
-					vs_[0].Tangent = vs_[1].Tangent = vs_[2].Tangent = vs_[3].Tangent = ToStruct(tangent);
-					vs_ += 4;
-				}
-			}
-		}
-		else if (vertexType == VertexType::Dynamic)
-		{
-			StrideView<DynamicVertex> vs_(m_ringBufferData, stride_, vertexCount_);
-			Effekseer::Vec3f axisBefore;
-
-			for (size_t i = 0; i < (instances.size() - 1) * parameter.SplineDivision + 1; i++)
-			{
-				bool isFirst_ = (i == 0);
-				bool isLast_ = (i == ((instances.size() - 1) * parameter.SplineDivision));
-
-				Effekseer::Vec3f axis;
-
-				if (isFirst_)
-				{
-					axis = (vs_[3].Pos - vs_[1].Pos);
-					axis = SafeNormalize(axis);
-					axisBefore = axis;
-				}
-				else if (isLast_)
-				{
-					axis = axisBefore;
-				}
-				else
-				{
-					Effekseer::Vec3f axisOld = axisBefore;
-					axis = (vs_[5].Pos - vs_[3].Pos);
-					axis = SafeNormalize(axis);
-					axisBefore = axis;
-
-					axis = (axisBefore + axisOld) / 2.0f;
-					axis = SafeNormalize(axis);
-				}
-
-				Effekseer::Vec3f tangent = vs_[1].Pos - vs_[0].Pos;
+				Effekseer::SIMD::Vec3f tangent = vs_[1].Pos - vs_[0].Pos;
 				tangent = SafeNormalize(tangent);
 
-				Effekseer::Vec3f normal = Effekseer::Vec3f::Cross(axis, tangent);
+				Effekseer::SIMD::Vec3f normal = Effekseer::SIMD::Vec3f::Cross(axis, tangent);
 				normal = SafeNormalize(normal);
 
 				if (!parameter.IsRightHand)
@@ -623,32 +666,38 @@ protected:
 
 				if (isFirst_)
 				{
-					vs_[0].Normal = PackVector3DF(normal);
-					vs_[0].Tangent = PackVector3DF(tangent);
-					vs_[1].Tangent = vs_[0].Tangent;
-					vs_[1].Normal = vs_[0].Normal;
+					const auto packedNormal = PackVector3DF(normal);
+					const auto packedTangent = PackVector3DF(tangent);
+					vs_[0].SetPackedNormal(packedNormal);
+					vs_[0].SetPackedTangent(packedTangent);
+					vs_[1].SetPackedNormal(packedNormal);
+					vs_[1].SetPackedTangent(packedTangent);
 
 					vs_ += 2;
 				}
 				else if (isLast_)
 				{
-					vs_[0].Normal = PackVector3DF(normal);
-					vs_[0].Tangent = PackVector3DF(tangent);
-					vs_[1].Tangent = vs_[0].Tangent;
-					vs_[1].Normal = vs_[0].Normal;
+					const auto packedNormal = PackVector3DF(normal);
+					const auto packedTangent = PackVector3DF(tangent);
+					vs_[0].SetPackedNormal(packedNormal);
+					vs_[0].SetPackedTangent(packedTangent);
+					vs_[1].SetPackedNormal(packedNormal);
+					vs_[1].SetPackedTangent(packedTangent);
 
 					vs_ += 2;
 				}
 				else
 				{
-					vs_[0].Normal = PackVector3DF(normal);
-					vs_[0].Tangent = PackVector3DF(tangent);
-					vs_[1].Tangent = vs_[0].Tangent;
-					vs_[1].Normal = vs_[0].Normal;
-					vs_[2].Tangent = vs_[0].Tangent;
-					vs_[2].Normal = vs_[0].Normal;
-					vs_[3].Tangent = vs_[0].Tangent;
-					vs_[3].Normal = vs_[0].Normal;
+					const auto packedNormal = PackVector3DF(normal);
+					const auto packedTangent = PackVector3DF(tangent);
+					vs_[0].SetPackedNormal(packedNormal);
+					vs_[0].SetPackedTangent(packedTangent);
+					vs_[1].SetPackedNormal(packedNormal);
+					vs_[1].SetPackedTangent(packedTangent);
+					vs_[2].SetPackedNormal(packedNormal);
+					vs_[2].SetPackedTangent(packedTangent);
+					vs_[3].SetPackedNormal(packedNormal);
+					vs_[3].SetPackedTangent(packedTangent);
 
 					vs_ += 4;
 				}
@@ -677,8 +726,7 @@ protected:
 
 		if (customData2Count_ > 0)
 		{
-			StrideView<float> custom(
-				m_ringBufferData + sizeof(DynamicVertex) + sizeof(float) * customData1Count_, stride_, vertexCount_);
+			StrideView<float> custom(m_ringBufferData + sizeof(DynamicVertex) + sizeof(float) * customData1Count_, stride_, vertexCount_);
 			for (size_t loop = 0; loop < instances.size() - 1; loop++)
 			{
 				auto& param = instances[loop];
@@ -701,7 +749,7 @@ public:
 		: m_renderer(renderer)
 		, m_ribbonCount(0)
 		, m_ringBufferOffset(0)
-		, m_ringBufferData(NULL)
+		, m_ringBufferData(nullptr)
 	{
 	}
 
@@ -710,29 +758,48 @@ public:
 	}
 
 protected:
-	void Rendering_(const efkRibbonNodeParam& parameter, const efkRibbonInstanceParam& instanceParameter, void* userData, const ::Effekseer::Mat44f& camera)
+	void Rendering_(const efkRibbonNodeParam& parameter,
+					const efkRibbonInstanceParam& instanceParameter,
+					const ::Effekseer::SIMD::Mat44f& camera)
 	{
 		const auto& state = m_renderer->GetStandardRenderer()->GetState();
-
-		if ((state.MaterialPtr != nullptr && !state.MaterialPtr->IsSimpleVertex) ||
-			parameter.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::Lighting)
+		const ShaderParameterCollector& collector = state.Collector;
+		if (collector.ShaderType == RendererShaderType::Material)
 		{
-			Rendering_Internal<DynamicVertex>(parameter, instanceParameter, userData, camera);
+			Rendering_Internal<DynamicVertex, FLIP_RGB_FLAG>(parameter, instanceParameter, camera);
 		}
-		else if (parameter.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::BackDistortion)
+		else if (collector.ShaderType == RendererShaderType::AdvancedLit)
 		{
-			Rendering_Internal<VERTEX_DISTORTION>(parameter, instanceParameter, userData, camera);
+			Rendering_Internal<AdvancedLightingVertex, FLIP_RGB_FLAG>(parameter, instanceParameter, camera);
+		}
+		else if (collector.ShaderType == RendererShaderType::AdvancedBackDistortion)
+		{
+			Rendering_Internal<AdvancedLightingVertex, FLIP_RGB_FLAG>(parameter, instanceParameter, camera);
+		}
+		else if (collector.ShaderType == RendererShaderType::AdvancedUnlit)
+		{
+			Rendering_Internal<AdvancedSimpleVertex, FLIP_RGB_FLAG>(parameter, instanceParameter, camera);
+		}
+		else if (collector.ShaderType == RendererShaderType::Lit)
+		{
+			Rendering_Internal<LightingVertex, FLIP_RGB_FLAG>(parameter, instanceParameter, camera);
+		}
+		else if (collector.ShaderType == RendererShaderType::BackDistortion)
+		{
+			Rendering_Internal<LightingVertex, FLIP_RGB_FLAG>(parameter, instanceParameter, camera);
 		}
 		else
 		{
-			Rendering_Internal<VERTEX_NORMAL>(parameter, instanceParameter, userData, camera);
+			Rendering_Internal<SimpleVertex, FLIP_RGB_FLAG>(parameter, instanceParameter, camera);
 		}
 	}
 
-	template <typename VERTEX>
-	void Rendering_Internal(const efkRibbonNodeParam& parameter, const efkRibbonInstanceParam& instanceParameter, void* userData, const ::Effekseer::Mat44f& camera)
+	template <typename VERTEX, bool FLIP_RGB>
+	void Rendering_Internal(const efkRibbonNodeParam& parameter,
+							const efkRibbonInstanceParam& instanceParameter,
+							const ::Effekseer::SIMD::Mat44f& camera)
 	{
-		if (m_ringBufferData == NULL)
+		if (m_ringBufferData == nullptr)
 			return;
 		if (instanceParameter.InstanceCount < 2)
 			return;
@@ -753,7 +820,7 @@ protected:
 
 		if (isLast)
 		{
-			RenderSplines<VERTEX>(camera);
+			RenderSplines<VERTEX, FLIP_RGB>(camera);
 		}
 	}
 
@@ -766,38 +833,61 @@ public:
 			return;
 
 		EffekseerRenderer::StandardRendererState state;
-		state.AlphaBlend = param.BasicParameterPtr->AlphaBlend;
 		state.CullingType = ::Effekseer::CullingType::Double;
 		state.DepthTest = param.ZTest;
 		state.DepthWrite = param.ZWrite;
+		/*
 		state.TextureFilter1 = param.BasicParameterPtr->TextureFilter1;
 		state.TextureWrap1 = param.BasicParameterPtr->TextureWrap1;
 		state.TextureFilter2 = param.BasicParameterPtr->TextureFilter2;
 		state.TextureWrap2 = param.BasicParameterPtr->TextureWrap2;
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 		state.TextureFilter3 = param.BasicParameterPtr->TextureFilter3;
 		state.TextureWrap3 = param.BasicParameterPtr->TextureWrap3;
+		state.TextureFilter4 = param.BasicParameterPtr->TextureFilter4;
+		state.TextureWrap4 = param.BasicParameterPtr->TextureWrap4;
+		state.TextureFilter5 = param.BasicParameterPtr->TextureFilter5;
+		state.TextureWrap5 = param.BasicParameterPtr->TextureWrap5;
+		state.TextureFilter6 = param.BasicParameterPtr->TextureFilter6;
+		state.TextureWrap6 = param.BasicParameterPtr->TextureWrap6;
+		state.TextureFilter7 = param.BasicParameterPtr->TextureFilter7;
+		state.TextureWrap7 = param.BasicParameterPtr->TextureWrap7;
+		*/
 
 		state.EnableInterpolation = param.BasicParameterPtr->EnableInterpolation;
 		state.UVLoopType = param.BasicParameterPtr->UVLoopType;
 		state.InterpolationType = param.BasicParameterPtr->InterpolationType;
 		state.FlipbookDivideX = param.BasicParameterPtr->FlipbookDivideX;
 		state.FlipbookDivideY = param.BasicParameterPtr->FlipbookDivideY;
-#endif
+
+		state.UVDistortionIntensity = param.BasicParameterPtr->UVDistortionIntensity;
+
+		state.TextureBlendType = param.BasicParameterPtr->TextureBlendType;
+
+		state.BlendUVDistortionIntensity = param.BasicParameterPtr->BlendUVDistortionIntensity;
+
+		state.EmissiveScaling = param.BasicParameterPtr->EmissiveScaling;
+
+		state.EdgeThreshold = param.BasicParameterPtr->EdgeThreshold;
+		state.EdgeColor[0] = param.BasicParameterPtr->EdgeColor[0];
+		state.EdgeColor[1] = param.BasicParameterPtr->EdgeColor[1];
+		state.EdgeColor[2] = param.BasicParameterPtr->EdgeColor[2];
+		state.EdgeColor[3] = param.BasicParameterPtr->EdgeColor[3];
+		state.EdgeColorScaling = param.BasicParameterPtr->EdgeColorScaling;
+		state.IsAlphaCuttoffEnabled = param.BasicParameterPtr->IsAlphaCutoffEnabled;
+		state.Maginification = param.Maginification;
 
 		state.Distortion = param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::BackDistortion;
 		state.DistortionIntensity = param.BasicParameterPtr->DistortionIntensity;
 		state.MaterialType = param.BasicParameterPtr->MaterialType;
 
-		state.CopyMaterialFromParameterToState(param.EffectPointer,
-											   param.BasicParameterPtr->MaterialParameterPtr,
-											   param.BasicParameterPtr->Texture1Index,
-											   param.BasicParameterPtr->Texture2Index
-#ifdef __EFFEKSEER_BUILD_VERSION16__
-											   ,
-											   param.BasicParameterPtr->Texture3Index
-#endif
-		);
+		state.RenderingUserData = param.UserData;
+		state.HandleUserData = userData;
+
+		state.CopyMaterialFromParameterToState(
+			m_renderer,
+			param.EffectPointer,
+			param.BasicParameterPtr);
+
 		customData1Count_ = state.CustomData1Count;
 		customData2Count_ = state.CustomData2Count;
 
@@ -809,7 +899,7 @@ public:
 
 	void Rendering(const efkRibbonNodeParam& parameter, const efkRibbonInstanceParam& instanceParameter, void* userData) override
 	{
-		Rendering_(parameter, instanceParameter, userData, m_renderer->GetCameraMatrix());
+		Rendering_(parameter, instanceParameter, m_renderer->GetCameraMatrix());
 	}
 };
 //----------------------------------------------------------------------------------

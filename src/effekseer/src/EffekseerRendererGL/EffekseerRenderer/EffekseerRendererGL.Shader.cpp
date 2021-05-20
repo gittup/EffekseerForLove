@@ -6,6 +6,8 @@
 #include "EffekseerRendererGL.GLExtension.h"
 #include "EffekseerRendererGL.Renderer.h"
 
+// #define __INTERNAL_DEBUG__
+
 #ifdef __ANDROID__
 
 #ifdef __ANDROID__DEBUG__
@@ -28,129 +30,167 @@
 namespace EffekseerRendererGL
 {
 
-static const char g_header_vs_gl3_src[] =
-	"#version 330\n"
-	"#define lowp\n"
-	"#define mediump\n"
-	"#define highp\n"
-	"#define IN in\n"
-	"#define CENTROID centroid\n"
-	"#define TEX2D textureLod\n"
-	"#define OUT out\n";
+static const char g_header_vs_gl3_src[] = "#version 330\n"
+										  R"(
+)"
+										  "#define lowp\n"
+										  "#define mediump\n"
+										  "#define highp\n"
+										  "#define IN in\n"
+										  "#define CENTROID centroid\n"
+										  "#define TEX2D textureLod\n"
+										  "#define OUT out\n";
 
-static const char g_header_fs_gl3_src[] =
-	"#version 330\n"
-	"#define lowp\n"
-	"#define mediump\n"
-	"#define highp\n"
-	"#define IN in\n"
-	"#define CENTROID centroid\n"
-	"#define TEX2D texture\n"
-	"layout (location = 0) out vec4 FRAGCOLOR;\n";
+static const char g_header_fs_gl3_src[] = "#version 330\n"
+										  R"(
+)"
+										  "#define lowp\n"
+										  "#define mediump\n"
+										  "#define highp\n"
+										  "#define IN in\n"
+										  "#define CENTROID centroid\n"
+										  "#define TEX2D texture\n"
+										  "layout (location = 0) out vec4 FRAGCOLOR;\n";
 
-static const char g_header_vs_gles3_src[] =
-	"#version 300 es\n"
-	"precision mediump float;\n"
-	"#define IN in\n"
-	"#define CENTROID\n"
-	"#define TEX2D textureLod\n"
-	"#define OUT out\n";
+static const char g_header_vs_gles3_src[] = "#version 300 es\n"
+											R"(
+)"
+											"#define IN in\n"
+											"#define CENTROID centroid\n"
+											"#define TEX2D textureLod\n"
+											"#define OUT out\n";
 
-static const char g_header_fs_gles3_src[] =
-	"#version 300 es\n"
-	"precision mediump float;\n"
-	"#define IN in\n"
-	"#define CENTROID\n"
-	"#define TEX2D texture\n"
-	"layout (location = 0) out vec4 FRAGCOLOR;\n";
+static const char g_header_fs_gles3_src[] = "#version 300 es\n"
+											R"(
+)"
+											"precision highp float;\n"
+											"#define IN in\n"
+											"#define CENTROID centroid\n"
+											"#define TEX2D texture\n"
+											"layout (location = 0) out vec4 FRAGCOLOR;\n";
 
-static const char g_header_vs_gles2_src[] =
-	"precision mediump float;\n"
-	"#define IN attribute\n"
-	"#define CENTROID\n"
-	"#define TEX2D texture2DLod\n"
-	"#define OUT varying\n";
+static const char g_header_vs_gles2_src[] = 
+											R"(
+#define EFK__INSTANCING_DISABLED__ 1
+)"
+											"#define IN attribute\n"
+											"#define CENTROID\n"
+											"#define TEX2D texture2DLod\n"
+											"#define OUT varying\n";
 
-static const char g_header_fs_gles2_src[] =
-	"precision mediump float;\n"
-	"#define IN varying\n"
-	"#define CENTROID\n"
-	"#define TEX2D texture2D\n"
-	"#define FRAGCOLOR gl_FragColor\n";
+static const char g_header_fs_gles2_src[] = "precision highp float;\n"
+											R"(
+)"
+											"#define IN varying\n"
+											"#define CENTROID\n"
+											"#define TEX2D texture2D\n"
+											"#define FRAGCOLOR gl_FragColor\n";
 
-static const char g_header_vs_gl2_src[] =
-	"#version 120\n"
-	"#define lowp\n"
-	"#define mediump\n"
-	"#define highp\n"
-	"#define IN attribute\n"
-	"#define CENTROID\n"
-	"#define TEX2D texture2DLod\n"
-	"#define OUT varying\n";
+static const char g_header_vs_gl2_src[] = "#version 120\n"
+										  R"(
+#define EFK__INSTANCING_DISABLED__ 1
+)"
+										  "#define lowp\n"
+										  "#define mediump\n"
+										  "#define highp\n"
+										  "#define IN attribute\n"
+										  "#define CENTROID\n"
+										  "#define TEX2D texture2DLod\n"
+										  "#define OUT varying\n";
 
-static const char g_header_fs_gl2_src[] =
-	"#version 120\n"
-	"#define lowp\n"
-	"#define mediump\n"
-	"#define highp\n"
-	"#define IN varying\n"
-	"#define CENTROID\n"
-	"#define TEX2D texture2D\n"
-	"#define FRAGCOLOR gl_FragColor\n";
+static const char g_header_fs_gl2_src[] = "#version 120\n"
+										  R"(
+)"
+										  "#define lowp\n"
+										  "#define mediump\n"
+										  "#define highp\n"
+										  "#define IN varying\n"
+										  "#define CENTROID\n"
+										  "#define TEX2D texture2D\n"
+										  "#define FRAGCOLOR gl_FragColor\n";
 
 //-----------------------------------------------------------------------------------
 //
 //-----------------------------------------------------------------------------------
-bool Shader::CompileShader(
-	OpenGLDeviceType deviceType,
-	GLuint& program,
-	const char* vs_src,
-	size_t vertexShaderSize,
-	const char* fs_src,
-	size_t pixelShaderSize,
-	const char* name)
+bool Shader::CompileShader(OpenGLDeviceType deviceType,
+						   GLuint& program,
+						   const ShaderCodeView* vsData,
+						   size_t vsDataCount,
+						   const ShaderCodeView* psData,
+						   size_t psDataCount,
+						   const char* name,
+						   bool addHeader)
 {
-	const char* src_data[2];
-	GLint src_size[2];
+	std::array<const char*, 16> src_data;
+	std::array<GLint, 16> src_size;
+
+	if (vsDataCount + 1 > src_data.size() || psDataCount + 1 > src_data.size())
+	{
+		assert(0);
+		return false;
+	}
 
 	GLuint vert_shader, frag_shader;
 	GLint res_vs, res_fs, res_link;
 
-	// compile a vertex shader
-	if (deviceType == OpenGLDeviceType::OpenGL3)
-		src_data[0] = g_header_vs_gl3_src;
-	if (deviceType == OpenGLDeviceType::OpenGL2)
-		src_data[0] = g_header_vs_gl2_src;
-	if (deviceType == OpenGLDeviceType::OpenGLES3)
-		src_data[0] = g_header_vs_gles3_src;
-	if (deviceType == OpenGLDeviceType::OpenGLES2 || deviceType == OpenGLDeviceType::Emscripten)
-		src_data[0] = g_header_vs_gles2_src;
+	size_t vsOffset = 0;
+	size_t psOffset = 0;
 
-	src_size[0] = (GLint)strlen(src_data[0]);
-	src_data[1] = vs_src;
-	src_size[1] = (GLint)strlen(vs_src);
+	// compile a vertex shader
+	if (addHeader)
+	{
+		if (deviceType == OpenGLDeviceType::OpenGL3)
+			src_data[0] = g_header_vs_gl3_src;
+		if (deviceType == OpenGLDeviceType::OpenGL2)
+			src_data[0] = g_header_vs_gl2_src;
+		if (deviceType == OpenGLDeviceType::OpenGLES3)
+			src_data[0] = g_header_vs_gles3_src;
+		if (deviceType == OpenGLDeviceType::OpenGLES2)
+			src_data[0] = g_header_vs_gles2_src;
+
+		src_size[0] = (GLint)strlen(src_data[0]);
+		vsOffset += 1;
+	}
+
+	for (int i = 0; i < vsDataCount; i++)
+	{
+		src_data[i + vsOffset] = vsData[i].Data;
+		src_size[i + vsOffset] = (GLint)strlen(src_data[i + vsOffset]);
+	}
+
+	vsOffset += vsDataCount;
 
 	vert_shader = GLExt::glCreateShader(GL_VERTEX_SHADER);
-	GLExt::glShaderSource(vert_shader, 2, src_data, src_size);
+	GLExt::glShaderSource(vert_shader, (GLsizei)vsOffset, src_data.data(), src_size.data());
 	GLExt::glCompileShader(vert_shader);
 	GLExt::glGetShaderiv(vert_shader, GL_COMPILE_STATUS, &res_vs);
 
 	// compile a fragment shader
-	if (deviceType == OpenGLDeviceType::OpenGL3)
-		src_data[0] = g_header_fs_gl3_src;
-	if (deviceType == OpenGLDeviceType::OpenGL2)
-		src_data[0] = g_header_fs_gl2_src;
-	if (deviceType == OpenGLDeviceType::OpenGLES3)
-		src_data[0] = g_header_fs_gles3_src;
-	if (deviceType == OpenGLDeviceType::OpenGLES2 || deviceType == OpenGLDeviceType::Emscripten)
-		src_data[0] = g_header_fs_gles2_src;
+	if (addHeader)
+	{
+		if (deviceType == OpenGLDeviceType::OpenGL3)
+			src_data[0] = g_header_fs_gl3_src;
+		if (deviceType == OpenGLDeviceType::OpenGL2)
+			src_data[0] = g_header_fs_gl2_src;
+		if (deviceType == OpenGLDeviceType::OpenGLES3)
+			src_data[0] = g_header_fs_gles3_src;
+		if (deviceType == OpenGLDeviceType::OpenGLES2)
+			src_data[0] = g_header_fs_gles2_src;
 
-	src_size[0] = (GLint)strlen(src_data[0]);
-	src_data[1] = fs_src;
-	src_size[1] = (GLint)strlen(fs_src);
+		src_size[0] = (GLint)strlen(src_data[0]);
+		psOffset += 1;
+	}
+
+	for (int i = 0; i < psDataCount; i++)
+	{
+		src_data[i + psOffset] = psData[i].Data;
+		src_size[i + psOffset] = (GLint)strlen(src_data[i + psOffset]);
+	}
+
+	psOffset += psDataCount;
 
 	frag_shader = GLExt::glCreateShader(GL_FRAGMENT_SHADER);
-	GLExt::glShaderSource(frag_shader, 2, src_data, src_size);
+	GLExt::glShaderSource(frag_shader, (GLsizei)psOffset, src_data.data(), src_size.data());
 	GLExt::glCompileShader(frag_shader);
 	GLExt::glGetShaderiv(frag_shader, GL_COMPILE_STATUS, &res_fs);
 
@@ -174,6 +214,7 @@ bool Shader::CompileShader(
 		{
 			LOG(name);
 			LOG(": Vertex Shader error.\n");
+			LOG((std::string("DeviceType=") + std::to_string(static_cast<int>(deviceType)) + "\n").c_str());
 			LOG(log);
 		}
 		GLExt::glGetShaderInfoLog(frag_shader, sizeof(log), &log_size, log);
@@ -181,6 +222,7 @@ bool Shader::CompileShader(
 		{
 			LOG(name);
 			LOG(": Fragment Shader error.\n");
+			LOG((std::string("DeviceType=") + std::to_string(static_cast<int>(deviceType)) + "\n").c_str());
 			LOG(log);
 		}
 		GLExt::glGetProgramInfoLog(program, sizeof(log), &log_size, log);
@@ -205,39 +247,83 @@ bool Shader::CompileShader(
 	return true;
 }
 
-//-----------------------------------------------------------------------------------
-//
-//-----------------------------------------------------------------------------------
-Shader::Shader(
-	OpenGLDeviceType deviceType,
-	Renderer* renderer,
-	DeviceObjectCollection* deviceObjectCollection,
-	GLuint program,
-	const char* vs_src,
-	size_t vertexShaderSize,
-	const char* fs_src,
-	size_t pixelShaderSize,
-	const char* name,
-	bool hasRefCount)
-	: DeviceObject(static_cast<RendererImplemented*>(renderer), deviceObjectCollection, hasRefCount)
-	, deviceType_(deviceType)
+bool Shader::ReloadShader()
+{
+	assert(m_program == 0);
+
+	GLuint program;
+
+	std::vector<ShaderCodeView> vsData;
+	std::vector<ShaderCodeView> psData;
+
+	vsData.resize(vsCodes_.size());
+	psData.resize(psCodes_.size());
+
+	for (size_t i = 0; i < vsData.size(); i++)
+	{
+		vsData[i].Data = vsCodes_[i].Code.data();
+		vsData[i].Length = (int32_t)vsCodes_[i].Code.size();
+	}
+
+	for (size_t i = 0; i < psData.size(); i++)
+	{
+		psData[i].Data = psCodes_[i].Code.data();
+		psData[i].Length = (int32_t)psCodes_[i].Code.size();
+	}
+
+	if (CompileShader(m_deviceType, program, vsData.data(), vsData.size(), psData.data(), psData.size(), name_.c_str(), addHeader_))
+	{
+		m_program = program;
+		GetAttribIdList(0, nullptr);
+	}
+	else
+	{
+		return false;
+	}
+
+	return true;
+}
+
+Shader::Shader(const Backend::GraphicsDeviceRef& graphicsDevice,
+			   GLuint program,
+			   const ShaderCodeView* vsData,
+			   size_t vsDataCount,
+			   const ShaderCodeView* psData,
+			   size_t psDataCount,
+			   const char* name,
+			   bool hasRefCount,
+			   bool addHeader)
+	: DeviceObject(graphicsDevice.Get())
+	, m_deviceType(graphicsDevice->GetDeviceType())
 	, m_program(program)
 	, m_vertexSize(0)
-	, m_vertexConstantBuffer(NULL)
-	, m_pixelConstantBuffer(NULL)
+	, m_vertexConstantBuffer(nullptr)
+	, m_pixelConstantBuffer(nullptr)
+	, addHeader_(addHeader)
 {
 	m_textureSlots.fill(0);
 	m_textureSlotEnables.fill(false);
 
-	m_vsSrc.resize(vertexShaderSize);
-	memcpy(m_vsSrc.data(), vs_src, vertexShaderSize);
-	m_vsSrc.push_back(0);
+	vsCodes_.resize(vsDataCount);
+	psCodes_.resize(psDataCount);
 
-	m_psSrc.resize(pixelShaderSize);
-	memcpy(m_psSrc.data(), fs_src, pixelShaderSize);
-	m_psSrc.push_back(0);
+	for (size_t i = 0; i < vsDataCount; i++)
+	{
+		vsCodes_[i].Code.resize(vsData[i].Length);
+		memcpy(vsCodes_[i].Code.data(), vsData[i].Data, vsData[i].Length);
+		vsCodes_[i].Code.push_back(0);
+	}
 
-	m_name = name;
+	for (size_t i = 0; i < psDataCount; i++)
+	{
+		psCodes_[i].Code.resize(psData[i].Length);
+		memcpy(psCodes_[i].Code.data(), psData[i].Data, psData[i].Length);
+		psCodes_[i].Code.push_back(0);
+	}
+
+	name_ = name;
+
+	baseInstance_ = GLExt::glGetUniformLocation(m_program, "SPIRV_Cross_BaseInstance");
 }
 
 //-----------------------------------------------------------------------------------
@@ -245,7 +331,17 @@ Shader::Shader(
 //-----------------------------------------------------------------------------------
 GLint Shader::GetAttribId(const char* name) const
 {
-	return GLExt::glGetAttribLocation(m_program, name);
+	auto ret = GLExt::glGetAttribLocation(m_program, name);
+
+#ifdef __INTERNAL_DEBUG__
+	if (ret < 0)
+	{
+		std::string message = "Unused : " + name_ + " : " + std::string(name) + "\n";
+		LOG(message.c_str());
+	}
+#endif
+
+	return ret;
 }
 
 //-----------------------------------------------------------------------------------
@@ -253,7 +349,17 @@ GLint Shader::GetAttribId(const char* name) const
 //-----------------------------------------------------------------------------------
 GLint Shader::GetUniformId(const char* name) const
 {
-	return GLExt::glGetUniformLocation(m_program, name);
+	auto ret = GLExt::glGetUniformLocation(m_program, name);
+
+#ifdef __INTERNAL_DEBUG__
+	if (ret < 0)
+	{
+		std::string message = "Unused : " + name_ + " : " + std::string(name) + "\n";
+		LOG(message.c_str());
+	}
+#endif
+
+	return ret;
 }
 
 //-----------------------------------------------------------------------------------
@@ -266,51 +372,24 @@ Shader::~Shader()
 	ES_SAFE_DELETE_ARRAY(m_pixelConstantBuffer);
 }
 
-Shader* Shader::Create(OpenGLDeviceType deviceType,
-
-					   DeviceObjectCollection* deviceObjectCollection,
-					   const char* vs_src,
-					   size_t vertexShaderSize,
-					   const char* fs_src,
-					   size_t pixelShaderSize,
+Shader* Shader::Create(const Backend::GraphicsDeviceRef& graphicsDevice,
+					   const ShaderCodeView* vsData,
+					   size_t vsDataCount,
+					   const ShaderCodeView* psData,
+					   size_t psDataCount,
 					   const char* name,
-					   bool hasRefCount)
+					   bool hasRefCount,
+					   bool addHeader)
 {
 	GLuint program;
 
-	if (CompileShader(deviceType, program, vs_src, vertexShaderSize, fs_src, pixelShaderSize, name))
+	if (CompileShader(graphicsDevice->GetDeviceType(), program, vsData, vsDataCount, psData, psDataCount, name, addHeader))
 	{
-		return new Shader(deviceType, nullptr, deviceObjectCollection, program, vs_src, vertexShaderSize, fs_src, pixelShaderSize, name, hasRefCount);
+		return new Shader(graphicsDevice, program, vsData, vsDataCount, psData, psDataCount, name, hasRefCount, addHeader);
 	}
 	else
 	{
-		return NULL;
-	}
-}
-
-Shader* Shader::Create(
-	Renderer* renderer, const char* vs_src, size_t vertexShaderSize, const char* fs_src, size_t pixelShaderSize, const char* name)
-{
-	GLuint program;
-
-	auto r = static_cast<RendererImplemented*>(renderer);
-
-	if (CompileShader(r->GetDeviceType(), program, vs_src, vertexShaderSize, fs_src, pixelShaderSize, name))
-	{
-		return new Shader(r->GetDeviceType(),
-						  renderer,
-						  r->GetDeviceObjectCollection(),
-						  program,
-						  vs_src,
-						  vertexShaderSize,
-						  fs_src,
-						  pixelShaderSize,
-						  name,
-						  true);
-	}
-	else
-	{
-		return NULL;
+		return nullptr;
 	}
 }
 
@@ -320,64 +399,28 @@ void Shader::OnLostDevice()
 	m_program = 0;
 }
 
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
 void Shader::OnResetDevice()
 {
 	if (IsValid())
 		return;
 
-	GLuint program;
-
-	if (CompileShader(
-			deviceType_,
-			program,
-			(const char*)(m_vsSrc.data()),
-			m_vsSrc.size(),
-			(const char*)(m_psSrc.data()),
-			m_psSrc.size(),
-			m_name.c_str()))
-	{
-		m_program = program;
-		GetAttribIdList(0, nullptr);
-	}
-	else
+	if (!ReloadShader())
 	{
 		printf("Failed to reset device.\n");
 	}
 }
 
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
 void Shader::OnChangeDevice()
 {
 	GLExt::glDeleteProgram(m_program);
+	m_program = 0;
 
-	GLuint program;
-
-	if (CompileShader(
-			deviceType_,
-			program,
-			(const char*)&(m_vsSrc[0]),
-			m_vsSrc.size(),
-			(const char*)&(m_psSrc[0]),
-			m_psSrc.size(),
-			m_name.c_str()))
-	{
-		m_program = program;
-		GetAttribIdList(0, nullptr);
-	}
-	else
+	if (!ReloadShader())
 	{
 		printf("Failed to change device.\n");
 	}
 }
 
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
 GLuint Shader::GetInterface() const
 {
 	return m_program;
@@ -388,6 +431,8 @@ void Shader::GetAttribIdList(int count, const ShaderAttribInfo* info)
 	// TODO : refactoring
 
 	m_aid.clear();
+
+	m_vertexSize = 0;
 
 	if (info != nullptr)
 	{
@@ -413,6 +458,18 @@ void Shader::GetAttribIdList(int count, const ShaderAttribInfo* info)
 			attribs[i].type = info[i].type;
 			attribs[i].offset = info[i].offset;
 			attribs[i].count = info[i].count;
+
+			int elementSize = 0;
+			if (attribs[i].type == GL_FLOAT)
+			{
+				elementSize = sizeof(float);
+			}
+			if (attribs[i].type == GL_UNSIGNED_BYTE)
+			{
+				elementSize = sizeof(uint8_t);
+			}
+
+			m_vertexSize = Effekseer::Max(m_vertexSize, attribs[i].offset + elementSize * attribs[i].count);
 		}
 	}
 	else
@@ -443,15 +500,6 @@ void Shader::GetUniformIdList(int count, const ShaderUniformInfo* info, GLint* u
 void Shader::BeginScene()
 {
 	GLExt::glUseProgram(m_program);
-	for (size_t i = 0; i < m_aid.size(); i++)
-	{
-		if (m_aid[i] >= 0)
-		{
-			GLint enabled;
-			GLExt::glGetVertexAttribiv(m_aid[i], GL_VERTEX_ATTRIB_ARRAY_ENABLED, &enabled);
-			m_vertex_enabled.push_back(enabled);
-		}
-	}
 }
 
 void Shader::EndScene()
@@ -462,7 +510,6 @@ void Shader::EndScene()
 void Shader::EnableAttribs()
 {
 	GLCheckError();
-	m_vertex_enabled.clear();
 	for (size_t i = 0; i < m_aid.size(); i++)
 	{
 		if (m_aid[i] >= 0)
@@ -481,10 +528,7 @@ void Shader::DisableAttribs()
 	{
 		if (m_aid[i] >= 0)
 		{
-			if(!m_vertex_enabled[i])
-			{
-				GLExt::glDisableVertexAttribArray(m_aid[i]);
-			}
+			GLExt::glDisableVertexAttribArray(m_aid[i]);
 		}
 	}
 	GLCheckError();
@@ -496,14 +540,14 @@ void Shader::SetVertex()
 	{
 		if (m_aid[i] >= 0)
 		{
-			GLExt::glVertexAttribPointer(m_aid[i], m_layout[i].count, m_layout[i].type, m_layout[i].normalized, m_vertexSize, reinterpret_cast<GLvoid*>(m_layout[i].offset));
+			GLExt::glVertexAttribPointer(m_aid[i],
+										 m_layout[i].count,
+										 m_layout[i].type,
+										 m_layout[i].normalized,
+										 m_vertexSize,
+										 reinterpret_cast<GLvoid*>(m_layout[i].offset));
 		}
 	}
-}
-
-void Shader::SetVertexSize(int32_t vertexSize)
-{
-	m_vertexSize = vertexSize;
 }
 
 //-----------------------------------------------------------------------------------
@@ -527,24 +571,26 @@ void Shader::SetPixelConstantBufferSize(int32_t size)
 //-----------------------------------------------------------------------------------
 //
 //-----------------------------------------------------------------------------------
-void Shader::AddVertexConstantLayout(eConstantType type, GLint id, int32_t offset)
+void Shader::AddVertexConstantLayout(eConstantType type, GLint id, int32_t offset, int32_t count)
 {
 	ConstantLayout l;
 	l.Type = type;
 	l.ID = id;
 	l.Offset = offset;
+	l.Count = count;
 	m_vertexConstantLayout.push_back(l);
 }
 
 //-----------------------------------------------------------------------------------
 //
 //-----------------------------------------------------------------------------------
-void Shader::AddPixelConstantLayout(eConstantType type, GLint id, int32_t offset)
+void Shader::AddPixelConstantLayout(eConstantType type, GLint id, int32_t offset, int32_t count)
 {
 	ConstantLayout l;
 	l.Type = type;
 	l.ID = id;
 	l.Offset = offset;
+	l.Count = count;
 	m_pixelConstantLayout.push_back(l);
 }
 
@@ -553,50 +599,26 @@ void Shader::AddPixelConstantLayout(eConstantType type, GLint id, int32_t offset
 //-----------------------------------------------------------------------------------
 void Shader::SetConstantBuffer()
 {
+	// baseInstance_
+	if (baseInstance_ >= 0)
+	{
+		GLExt::glUniform1i(baseInstance_, 0);
+	}
+
 	for (size_t i = 0; i < m_vertexConstantLayout.size(); i++)
 	{
 		if (m_vertexConstantLayout[i].Type == CONSTANT_TYPE_MATRIX44)
 		{
 			uint8_t* data = (uint8_t*)m_vertexConstantBuffer;
 			data += m_vertexConstantLayout[i].Offset;
-			GLExt::glUniformMatrix4fv(
-				m_vertexConstantLayout[i].ID,
-				1,
-				GL_FALSE,
-				(const GLfloat*)data);
-		}
-		else if (
-			CONSTANT_TYPE_MATRIX44_ARRAY_END > m_vertexConstantLayout[i].Type &&
-			m_vertexConstantLayout[i].Type >= CONSTANT_TYPE_MATRIX44_ARRAY)
-		{
-			uint8_t* data = (uint8_t*)m_vertexConstantBuffer;
-			data += m_vertexConstantLayout[i].Offset;
-			GLExt::glUniformMatrix4fv(
-				m_vertexConstantLayout[i].ID,
-				m_vertexConstantLayout[i].Type - CONSTANT_TYPE_MATRIX44_ARRAY,
-				GL_FALSE,
-				(const GLfloat*)data);
+			GLExt::glUniformMatrix4fv(m_vertexConstantLayout[i].ID, m_vertexConstantLayout[i].Count, isTransposeEnabled_ ? GL_TRUE : GL_FALSE, (const GLfloat*)data);
 		}
 
 		else if (m_vertexConstantLayout[i].Type == CONSTANT_TYPE_VECTOR4)
 		{
 			uint8_t* data = (uint8_t*)m_vertexConstantBuffer;
 			data += m_vertexConstantLayout[i].Offset;
-			GLExt::glUniform4fv(
-				m_vertexConstantLayout[i].ID,
-				1,
-				(const GLfloat*)data);
-		}
-		else if (
-			CONSTANT_TYPE_VECTOR4_ARRAY_END > m_vertexConstantLayout[i].Type &&
-			m_vertexConstantLayout[i].Type >= CONSTANT_TYPE_VECTOR4_ARRAY)
-		{
-			uint8_t* data = (uint8_t*)m_vertexConstantBuffer;
-			data += m_vertexConstantLayout[i].Offset;
-			GLExt::glUniform4fv(
-				m_vertexConstantLayout[i].ID,
-				m_vertexConstantLayout[i].Type - CONSTANT_TYPE_VECTOR4_ARRAY,
-				(const GLfloat*)data);
+			GLExt::glUniform4fv(m_vertexConstantLayout[i].ID, m_vertexConstantLayout[i].Count, (const GLfloat*)data);
 		}
 	}
 
@@ -606,44 +628,14 @@ void Shader::SetConstantBuffer()
 		{
 			uint8_t* data = (uint8_t*)m_pixelConstantBuffer;
 			data += m_pixelConstantLayout[i].Offset;
-			GLExt::glUniformMatrix4fv(
-				m_pixelConstantLayout[i].ID,
-				1,
-				GL_FALSE,
-				(const GLfloat*)data);
-		}
-		else if (
-			CONSTANT_TYPE_MATRIX44_ARRAY_END > m_pixelConstantLayout[i].Type &&
-			m_pixelConstantLayout[i].Type >= CONSTANT_TYPE_MATRIX44_ARRAY)
-		{
-			uint8_t* data = (uint8_t*)m_pixelConstantBuffer;
-			data += m_pixelConstantLayout[i].Offset;
-			GLExt::glUniformMatrix4fv(
-				m_pixelConstantLayout[i].ID,
-				m_pixelConstantLayout[i].Type - CONSTANT_TYPE_MATRIX44_ARRAY,
-				GL_FALSE,
-				(const GLfloat*)data);
+			GLExt::glUniformMatrix4fv(m_pixelConstantLayout[i].ID, m_pixelConstantLayout[i].Count, isTransposeEnabled_ ? GL_TRUE : GL_FALSE, (const GLfloat*)data);
 		}
 
 		else if (m_pixelConstantLayout[i].Type == CONSTANT_TYPE_VECTOR4)
 		{
 			uint8_t* data = (uint8_t*)m_pixelConstantBuffer;
 			data += m_pixelConstantLayout[i].Offset;
-			GLExt::glUniform4fv(
-				m_pixelConstantLayout[i].ID,
-				1,
-				(const GLfloat*)data);
-		}
-		else if (
-			CONSTANT_TYPE_VECTOR4_ARRAY_END > m_pixelConstantLayout[i].Type &&
-			m_pixelConstantLayout[i].Type >= CONSTANT_TYPE_VECTOR4_ARRAY)
-		{
-			uint8_t* data = (uint8_t*)m_pixelConstantBuffer;
-			data += m_pixelConstantLayout[i].Offset;
-			GLExt::glUniform4fv(
-				m_pixelConstantLayout[i].ID,
-				m_pixelConstantLayout[i].Type - CONSTANT_TYPE_VECTOR4_ARRAY,
-				(const GLfloat*)data);
+			GLExt::glUniform4fv(m_pixelConstantLayout[i].ID, m_pixelConstantLayout[i].Count, (const GLfloat*)data);
 		}
 	}
 
@@ -653,16 +645,19 @@ void Shader::SetConstantBuffer()
 //-----------------------------------------------------------------------------------
 //
 //-----------------------------------------------------------------------------------
-void Shader::SetTextureSlot(int32_t index, GLuint value)
+void Shader::SetTextureSlot(int32_t index, GLint value)
 {
-	m_textureSlots[index] = value;
-	m_textureSlotEnables[index] = true;
+	if (value >= 0)
+	{
+		m_textureSlots[index] = value;
+		m_textureSlotEnables[index] = true;
+	}
 }
 
 //-----------------------------------------------------------------------------------
 //
 //-----------------------------------------------------------------------------------
-GLuint Shader::GetTextureSlot(int32_t index)
+GLint Shader::GetTextureSlot(int32_t index)
 {
 	return m_textureSlots[index];
 }

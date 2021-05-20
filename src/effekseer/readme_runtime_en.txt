@@ -1,33 +1,11 @@
 # Effekseer Runtime
 
-## Release notes
-
-### After 1.52k
-
-- Please read online release notes
-
-https://effekseer.github.io/Help_Tool/en/releasenotes.html
-
-### 1.52i
-
-- Fixed many bugs
-- Added Metal sample
-
-### 1.52h
-
-- (Broken changes) Depth format now can be specified.
-- Fixed many bugs
-
 ## Overview
 
 Thank you for downloading Effekseer.
 This package contains a runtime for showing visual effects on applications using DirectX or OpenGL.
 The package does not contain tools or samples to create visual effects.
 If you want these, please download a package of tools.
-
-## API Reference
-
-https://effekseer.github.io/Help_Runtime/en/index.html
 
 ## How to use
 

@@ -16,10 +16,11 @@
 #include "Effekseer.Base.h"
 #include "Effekseer.Color.h"
 #include "Effekseer.Manager.h"
+#include "Effekseer.Random.h"
 #include "Effekseer.Vector2D.h"
 #include "Effekseer.Vector3D.h"
-#include "SIMD/Effekseer.Vec2f.h"
-#include "SIMD/Effekseer.Vec3f.h"
+#include "SIMD/Vec2f.h"
+#include "SIMD/Vec3f.h"
 
 //----------------------------------------------------------------------------------
 //
@@ -117,11 +118,9 @@ struct random_vector2d
 		memset(this, 0, sizeof(random_vector2d));
 	};
 
-	Vec2f getValue(IRandObject& g) const
+	SIMD::Vec2f getValue(IRandObject& g) const
 	{
-		return {
-			g.GetRand(min.x, max.x),
-			g.GetRand(min.y, max.y)};
+		return {g.GetRand(min.x, max.x), g.GetRand(min.y, max.y)};
 	}
 };
 
@@ -172,9 +171,9 @@ struct easing_vector2d
 	float easingB;
 	float easingC;
 
-	Vec2f getValue(const Vec2f& start_, const Vec2f& end_, float t) const
+	SIMD::Vec2f getValue(const SIMD::Vec2f& start_, const SIMD::Vec2f& end_, float t) const
 	{
-		Vec2f size = end_ - start_;
+		SIMD::Vec2f size = end_ - start_;
 		float d = easingA * t * t * t + easingB * t * t + easingC * t;
 		return start_ + size * d;
 	}
@@ -211,12 +210,26 @@ struct random_vector3d
 		memset(this, 0, sizeof(random_vector3d));
 	};
 
-	Vec3f getValue(IRandObject& g) const
+	SIMD::Vec3f getValue(IRandObject& g) const
 	{
-		return {
-			g.GetRand(min.x, max.x),
-			g.GetRand(min.y, max.y),
-			g.GetRand(min.z, max.z)};
+		return {g.GetRand(min.x, max.x), g.GetRand(min.y, max.y), g.GetRand(min.z, max.z)};
+	}
+
+	SIMD::Vec3f getValue(const std::array<int32_t, 3>& channels, int32_t channelCount, IRandObject& g) const
+	{
+		assert(channelCount <= 3);
+		std::array<float, 3> channelValues;
+
+		for (int32_t i = 0; i < channelCount; i++)
+		{
+			channelValues[i] = g.GetRand();
+		}
+
+		auto x = channelValues[channels[0]] * (max.x - min.x) + min.x;
+		auto y = channelValues[channels[1]] * (max.y - min.y) + min.y;
+		auto z = channelValues[channels[2]] * (max.z - min.z) + min.z;
+
+		return {x, y, z};
 	}
 };
 
@@ -231,9 +244,9 @@ struct easing_vector3d
 	float easingB;
 	float easingC;
 
-	Vec3f getValue(const Vec3f& start_, const Vec3f& end_, float t) const
+	SIMD::Vec3f getValue(const SIMD::Vec3f& start_, const SIMD::Vec3f& end_, float t) const
 	{
-		Vec3f size = end_ - start_;
+		SIMD::Vec3f size = end_ - start_;
 		float d = easingA * t * t * t + easingB * t * t + easingC * t;
 		return start_ + size * d;
 	}
@@ -289,9 +302,9 @@ inline Color HSVToRGB(Color hsv)
 		break;
 	}
 	Color result;
-	result.R = R;
-	result.G = G;
-	result.B = B;
+	result.R = static_cast<uint8_t>(R);
+	result.G = static_cast<uint8_t>(G);
+	result.B = static_cast<uint8_t>(B);
 	result.A = hsv.A;
 	return result;
 }

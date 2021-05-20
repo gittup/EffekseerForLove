@@ -10,9 +10,10 @@
 #include "../Effekseer.Matrix43.h"
 #include "../Effekseer.Vector2D.h"
 #include "../Effekseer.Vector3D.h"
-#include "../SIMD/Effekseer.Mat43f.h"
-#include "../SIMD/Effekseer.Vec2f.h"
-#include "../SIMD/Effekseer.Vec3f.h"
+#include "../Parameter/Effekseer.Parameters.h"
+#include "../SIMD/Mat43f.h"
+#include "../SIMD/Vec2f.h"
+#include "../SIMD/Vec3f.h"
 
 //----------------------------------------------------------------------------------
 //
@@ -23,52 +24,57 @@ namespace Effekseer
 //
 //----------------------------------------------------------------------------------
 
-class ModelRenderer
+class ModelRenderer : public ReferenceObject
 {
 public:
 	struct NodeParameter
 	{
 		Effect* EffectPointer;
-		//AlphaBlendType		AlphaBlend;
-		//TextureFilterType	TextureFilter;
-		//TextureWrapType	TextureWrap;
 		bool ZTest;
 		bool ZWrite;
 		BillboardType Billboard;
 
-		//bool				Lighting;
+		// bool				Lighting;
 		CullingType Culling;
 		int32_t ModelIndex;
-		//int32_t				ColorTextureIndex;
-		//int32_t				NormalTextureIndex;
 		float Magnification;
 		bool IsRightHand;
-
-		//bool				Distortion;
-		//float				DistortionIntensity;
+		float Maginification = 1.0f;
 
 		NodeRendererDepthParameter* DepthParameterPtr = nullptr;
 		NodeRendererBasicParameter* BasicParameterPtr = nullptr;
 
-		//RendererMaterialType MaterialType = RendererMaterialType::Default;
-		//MaterialParameter* MaterialParameterPtr = nullptr;
+		bool EnableFalloff;
+		FalloffParameter FalloffParam;
 
-		//float				DepthOffset;
-		//bool				IsDepthOffsetScaledWithCamera;
-		//bool				IsDepthOffsetScaledWithParticleScale;
+		bool EnableViewOffset = false;
+
+		bool IsProceduralMode = false;
+
+		RefPtr<RenderingUserData> UserData;
 	};
 
 	struct InstanceParameter
 	{
-		Mat43f SRTMatrix43;
+		SIMD::Mat43f SRTMatrix43;
 		RectF UV;
-#ifdef __EFFEKSEER_BUILD_VERSION16__
+
 		RectF AlphaUV;
+
+		RectF UVDistortionUV;
+
+		RectF BlendUV;
+
+		RectF BlendAlphaUV;
+
+		RectF BlendUVDistortionUV;
 
 		float FlipbookIndexAndNextRate;
 
 		float AlphaThreshold;
-#endif
+
+		float ViewOffsetDistance;
+
 		Color AllColor;
 		int32_t Time;
 		std::array<float, 4> CustomData1;

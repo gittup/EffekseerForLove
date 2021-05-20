@@ -12,7 +12,7 @@
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-#if (defined(_M_IX86_FP) && _M_IX86_FP >= 2) || defined(__SSE__)
+#if (defined(_M_AMD64) || defined(_M_X64)) || (defined(_M_IX86_FP) && _M_IX86_FP >= 2) || defined(__SSE2__)
 #define EFK_SSE2
 #include <emmintrin.h>
 #elif defined(__ARM_NEON__)
@@ -40,10 +40,7 @@ namespace Effekseer
 //----------------------------------------------------------------------------------
 void Matrix43::Indentity()
 {
-	static const Matrix43 indentity = {{{1.0f, 0.0f, 0.0f},
-										{0.0f, 1.0f, 0.0f},
-										{0.0f, 0.0f, 1.0f},
-										{0.0f, 0.0f, 0.0f}}};
+	static const Matrix43 indentity = {{{1.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 0.0f}}};
 	memcpy(Value, indentity.Value, sizeof(indentity));
 }
 
@@ -395,7 +392,7 @@ void Matrix43::GetSRT(Vector3D& s, Matrix43& r, Vector3D& t) const
 void Matrix43::GetScale(Vector3D& s) const
 {
 #ifdef SSE_MODULE
-	Mat44f mat;
+	SIMD::Mat44f mat;
 	mat.X.SetX(Value[0][0]);
 	mat.X.SetY(Value[0][1]);
 	mat.X.SetZ(Value[0][2]);

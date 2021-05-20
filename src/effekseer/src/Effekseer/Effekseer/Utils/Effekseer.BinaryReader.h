@@ -101,7 +101,7 @@ public:
 
 		if (IsValidationEnabled)
 		{
-			if (reinterpret_cast<U>(value) < min_ || reinterpret_cast<U>(value) > max_)
+			if (static_cast<U>(value) < min_ || static_cast<U>(value) > max_)
 			{
 				status_ = BinaryReaderStatus::Failed;
 				return false;
@@ -142,12 +142,12 @@ public:
 
 		value.resize(count);
 
-		if (count > 0)
+		if (value.size() > 0)
 		{
 			memcpy(value.data(), data_ + offset, sizeof(T) * count);
-			offset += sizeof(T) * count;
 		}
 
+		offset += sizeof(T) * count;
 		return true;
 	}
 

@@ -8,14 +8,14 @@
 #include "../../EffekseerRendererCommon/EffekseerRenderer.RenderStateBase.h"
 #include "../../EffekseerRendererCommon/EffekseerRenderer.StandardRenderer.h"
 #include "EffekseerRendererGL.Base.h"
-#include "EffekseerRendererGL.DeviceObjectCollection.h"
 #include "EffekseerRendererGL.Renderer.h"
+#include "GraphicsDevice.h"
 
 namespace EffekseerRendererGL
 {
 
 using Vertex = EffekseerRenderer::SimpleVertex;
-using VertexDistortion = EffekseerRenderer::VertexDistortion;
+//using VertexDistortion = EffekseerRenderer::VertexDistortion;
 
 struct RenderStateSet
 {
@@ -42,38 +42,50 @@ struct RenderStateSet
 	@note
 	ツール向けの描画機能。
 */
-class RendererImplemented
-	: public Renderer,
-	  public ::Effekseer::ReferenceObject
+class RendererImplemented;
+using RendererImplementedRef = ::Effekseer::RefPtr<RendererImplemented>;
+
+class RendererImplemented : public Renderer, public ::Effekseer::ReferenceObject
 {
 	friend class DeviceObject;
 
 private:
-	DeviceObjectCollection* deviceObjectCollection_ = nullptr;
+	Backend::GraphicsDeviceRef graphicsDevice_ = nullptr;
 
 	VertexBuffer* m_vertexBuffer;
 	IndexBuffer* m_indexBuffer = nullptr;
 	IndexBuffer* m_indexBufferForWireframe = nullptr;
 	int32_t m_squareMaxCount;
 
-	Shader* m_shader = nullptr;
-	Shader* m_shader_distortion = nullptr;
-	Shader* m_shader_lighting = nullptr;
+	Shader* shader_unlit_ = nullptr;
+	Shader* shader_distortion_ = nullptr;
+	Shader* shader_lit_ = nullptr;
+	Shader* shader_ad_unlit_ = nullptr;
+	Shader* shader_ad_lit_ = nullptr;
+	Shader* shader_ad_distortion_ = nullptr;
+
 	Shader* currentShader = nullptr;
 
-	EffekseerRenderer::StandardRenderer<RendererImplemented, Shader, Vertex, VertexDistortion>* m_standardRenderer;
+	EffekseerRenderer::StandardRenderer<RendererImplemented, Shader>* m_standardRenderer;
 
-	VertexArray* m_vao = nullptr;
-	VertexArray* m_vao_distortion = nullptr;
-	VertexArray* m_vao_lighting = nullptr;
-	VertexArray* m_vao_wire_frame = nullptr;
+	VertexArray* vao_unlit_ = nullptr;
+	VertexArray* vao_distortion_ = nullptr;
+	VertexArray* vao_lit_ = nullptr;
+	VertexArray* vao_ad_unlit_ = nullptr;
+	VertexArray* vao_ad_lit_ = nullptr;
+	VertexArray* vao_ad_distortion_ = nullptr;
+
+	VertexArray* vao_unlit_wire_ = nullptr;
+	VertexArray* vao_distortion_wire_ = nullptr;
+	VertexArray* vao_lit_wire_ = nullptr;
+	VertexArray* vao_ad_unlit_wire_ = nullptr;
+	VertexArray* vao_ad_distortion_wire_ = nullptr;
+	VertexArray* vao_ad_lit_wire_ = nullptr;
 
 	//! default vao (alsmot for material)
 	GLuint defaultVertexArray_ = 0;
 
 	::EffekseerRenderer::RenderStateBase* m_renderState;
-
-	Effekseer::TextureData m_background;
 
 	OpenGLDeviceType m_deviceType;
 
@@ -84,8 +96,10 @@ private:
 
 	EffekseerRenderer::DistortingCallback* m_distortingCallback;
 
+	::Effekseer::Backend::TextureRef m_backgroundGL;
+
 	// textures which are specified currently
-	std::vector<::Effekseer::TextureData> currentTextures_;
+	std::vector<::Effekseer::Backend::TextureRef> currentTextures_;
 
 	VertexArray* m_currentVertexArray;
 
@@ -97,7 +111,7 @@ private:
 	int32_t GetIndexSpriteCount() const;
 
 public:
-	RendererImplemented(int32_t squareMaxCount, OpenGLDeviceType deviceType, DeviceObjectCollection* deviceObjectCollection);
+	RendererImplemented(int32_t squareMaxCount, Backend::GraphicsDeviceRef graphicsDevice);
 
 	~RendererImplemented();
 
@@ -105,8 +119,6 @@ public:
 	void OnResetDevice() override;
 
 	bool Initialize();
-
-	void Destroy() override;
 
 	void SetRestorationOfStatesFlag(bool flag) override;
 
@@ -142,60 +154,47 @@ public:
 	/**
 		@brief	スプライトレンダラーを生成する。
 	*/
-	::Effekseer::SpriteRenderer* CreateSpriteRenderer() override;
+	::Effekseer::SpriteRendererRef CreateSpriteRenderer() override;
 
 	/**
 		@brief	リボンレンダラーを生成する。
 	*/
-	::Effekseer::RibbonRenderer* CreateRibbonRenderer() override;
+	::Effekseer::RibbonRendererRef CreateRibbonRenderer() override;
 
 	/**
 		@brief	リングレンダラーを生成する。
 	*/
-	::Effekseer::RingRenderer* CreateRingRenderer() override;
+	::Effekseer::RingRendererRef CreateRingRenderer() override;
 
 	/**
 		@brief	モデルレンダラーを生成する。
 	*/
-	::Effekseer::ModelRenderer* CreateModelRenderer() override;
+	::Effekseer::ModelRendererRef CreateModelRenderer() override;
 
 	/**
 		@brief	軌跡レンダラーを生成する。
 	*/
-	::Effekseer::TrackRenderer* CreateTrackRenderer() override;
+	::Effekseer::TrackRendererRef CreateTrackRenderer() override;
 
 	/**
 		@brief	テクスチャ読込クラスを生成する。
 	*/
-	::Effekseer::TextureLoader* CreateTextureLoader(::Effekseer::FileInterface* fileInterface = NULL) override;
+	::Effekseer::TextureLoaderRef CreateTextureLoader(::Effekseer::FileInterface* fileInterface = nullptr) override;
 
 	/**
 		@brief	モデル読込クラスを生成する。
 	*/
-	::Effekseer::ModelLoader* CreateModelLoader(::Effekseer::FileInterface* fileInterface = NULL) override;
+	::Effekseer::ModelLoaderRef CreateModelLoader(::Effekseer::FileInterface* fileInterface = nullptr) override;
 
-	::Effekseer::MaterialLoader* CreateMaterialLoader(::Effekseer::FileInterface* fileInterface = nullptr) override;
-
-	/**
-	@brief	背景を取得する。
-	*/
-	Effekseer::TextureData* GetBackground() override
-	{
-		if (m_background.UserID == 0)
-			return nullptr;
-		return &m_background;
-	}
+	::Effekseer::MaterialLoaderRef CreateMaterialLoader(::Effekseer::FileInterface* fileInterface = nullptr) override;
 
 	void SetBackground(GLuint background, bool hasMipmap) override;
-
-	void SetBackgroundTexture(::Effekseer::TextureData* textureData) override;
 
 	EffekseerRenderer::DistortingCallback* GetDistortingCallback() override;
 
 	void SetDistortingCallback(EffekseerRenderer::DistortingCallback* callback) override;
 
-	EffekseerRenderer::StandardRenderer<RendererImplemented, Shader, Vertex, VertexDistortion>*
-	GetStandardRenderer()
+	EffekseerRenderer::StandardRenderer<RendererImplemented, Shader>* GetStandardRenderer()
 	{
 		return m_standardRenderer;
 	}
@@ -204,13 +203,18 @@ public:
 	void SetVertexBuffer(GLuint vertexBuffer, int32_t size);
 	void SetIndexBuffer(IndexBuffer* indexBuffer);
 	void SetIndexBuffer(GLuint indexBuffer);
+
+	void SetVertexBuffer(const Effekseer::Backend::VertexBufferRef& vertexBuffer, int32_t size);
+	void SetIndexBuffer(const Effekseer::Backend::IndexBufferRef& indexBuffer);
+
 	void SetVertexArray(VertexArray* vertexArray);
 
 	void SetLayout(Shader* shader);
 	void DrawSprites(int32_t spriteCount, int32_t vertexOffset);
 	void DrawPolygon(int32_t vertexCount, int32_t indexCount);
+	void DrawPolygonInstanced(int32_t vertexCount, int32_t indexCount, int32_t instanceCount);
 
-	Shader* GetShader(bool useTexture, ::Effekseer::RendererMaterialType materialType) const;
+	Shader* GetShader(::EffekseerRenderer::RendererShaderType type) const;
 	void BeginShader(Shader* shader);
 	void EndShader(Shader* shader);
 
@@ -218,15 +222,11 @@ public:
 
 	void SetPixelBufferToShader(const void* data, int32_t size, int32_t dstOffset);
 
-	void SetTextures(Shader* shader, Effekseer::TextureData** textures, int32_t count);
+	void SetTextures(Shader* shader, Effekseer::Backend::TextureRef* textures, int32_t count);
 
 	void ResetRenderState() override;
 
-	Effekseer::TextureData* CreateProxyTexture(EffekseerRenderer::ProxyTextureType type) override;
-
-	void DeleteProxyTexture(Effekseer::TextureData* data) override;
-
-	const std::vector<::Effekseer::TextureData>& GetCurrentTextures() const
+	const std::vector<::Effekseer::Backend::TextureRef>& GetCurrentTextures() const
 	{
 		return currentTextures_;
 	}
@@ -238,9 +238,14 @@ public:
 
 	bool IsVertexArrayObjectSupported() const override;
 
-	DeviceObjectCollection* GetDeviceObjectCollection() const
+	Backend::GraphicsDeviceRef& GetInternalGraphicsDevice()
 	{
-		return deviceObjectCollection_;
+		return graphicsDevice_;
+	}
+
+	Effekseer::Backend::GraphicsDeviceRef GetGraphicsDevice() const override
+	{
+		return graphicsDevice_;
 	}
 
 	virtual int GetRef() override
@@ -262,6 +267,10 @@ private:
 	template <typename T>
 	void GenerateIndexDataStride();
 };
+
+void AssignPixelConstantBuffer(Shader* shader);
+
+void AssignDistortionPixelConstantBuffer(Shader* shader);
 
 //----------------------------------------------------------------------------------
 //

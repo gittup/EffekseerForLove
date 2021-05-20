@@ -1,15 +1,7 @@
-
-
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
-#if defined(_M_X86) && defined(__x86__)
-#include <emmintrin.h>
-#endif
+#include "Effekseer.Vector3D.h"
 #include "Effekseer.Matrix43.h"
 #include "Effekseer.Matrix44.h"
-#include "Effekseer.Vector3D.h"
-#include "SIMD/Effekseer.Vec3f.h"
+#include "SIMD/Vec3f.h"
 
 //----------------------------------------------------------------------------------
 //
@@ -183,7 +175,7 @@ float Vector3D::Dot(const Vector3D& in1, const Vector3D& in2)
 //----------------------------------------------------------------------------------
 void Vector3D::Normal(Vector3D& o, const Vector3D& in)
 {
-	float inv = Rsqrt(in.X * in.X + in.Y * in.Y + in.Z * in.Z);
+	float inv = SIMD::Rsqrt(in.X * in.X + in.Y * in.Y + in.Z * in.Z);
 	o.X = in.X * inv;
 	o.Y = in.Y * inv;
 	o.Z = in.Z * inv;

@@ -96,7 +96,7 @@ void WorldInternal::RemoveObject(Object* o)
 
 void WorldInternal::AddObjectInternal(Object* o)
 {
-	assert(o != NULL);
+	assert(o != nullptr);
 
 	ObjectInternal* o_ = (ObjectInternal*)o;
 
@@ -155,14 +155,14 @@ void WorldInternal::AddObjectInternal(Object* o)
 
 void WorldInternal::RemoveObjectInternal(Object* o)
 {
-	assert(o != NULL);
+	assert(o != nullptr);
 
 	ObjectInternal* o_ = (ObjectInternal*)o;
 
 	if (o_->GetCurrentStatus().Type == OBJECT_SHAPE_TYPE_ALL)
 	{
 		allLayers.RemoveObject(o);
-		o_->SetWorld(NULL);
+		o_->SetWorld(nullptr);
 		return;
 	}
 
@@ -176,7 +176,7 @@ void WorldInternal::RemoveObjectInternal(Object* o)
 		{
 			outofLayers.RemoveObject(o);
 		}
-		o_->SetWorld(NULL);
+		o_->SetWorld(nullptr);
 		return;
 	}
 
@@ -193,7 +193,7 @@ void WorldInternal::RemoveObjectInternal(Object* o)
 		{
 			if (layers[i]->RemoveObject(o))
 			{
-				((ObjectInternal*)o)->SetWorld(NULL);
+				((ObjectInternal*)o)->SetWorld(nullptr);
 				found = true;
 			}
 			else
@@ -207,7 +207,7 @@ void WorldInternal::RemoveObjectInternal(Object* o)
 
 	if (!found)
 	{
-		((ObjectInternal*)o)->SetWorld(NULL);
+		((ObjectInternal*)o)->SetWorld(nullptr);
 		outofLayers.RemoveObject(o);
 	}
 }
@@ -363,9 +363,7 @@ void WorldInternal::Culling(const Matrix44& cameraProjMat, bool isOpenGL)
 {
 	objs.clear();
 
-	if (!std::isinf(cameraProjMat.Values[2][2]) &&
-		cameraProjMat.Values[0][0] != 0.0f &&
-		cameraProjMat.Values[1][1] != 0.0f)
+	if (!std::isinf(cameraProjMat.Values[2][2]) && cameraProjMat.Values[0][0] != 0.0f && cameraProjMat.Values[1][1] != 0.0f)
 	{
 
 		Matrix44 cameraProjMatInv = cameraProjMat;
@@ -541,8 +539,7 @@ void WorldInternal::Culling(const Matrix44& cameraProjMat, bool isOpenGL)
 				Object* o = grids[i]->GetObjects()[j];
 				ObjectInternal* o_ = (ObjectInternal*)o;
 
-				if (
-					o_->GetNextStatus().Type == OBJECT_SHAPE_TYPE_ALL ||
+				if (o_->GetNextStatus().Type == OBJECT_SHAPE_TYPE_ALL ||
 					IsInView(o_->GetPosition(), o_->GetNextStatus().GetRadius(), facePositions, faceDir))
 				{
 					objs.push_back(o);
@@ -814,8 +811,8 @@ void WorldInternal::Dump(const char* path, const Matrix44& cameraProjMat, bool i
 	for (size_t i = 0; i < layers.size(); i++)
 	{
 		auto& layer = layers[i];
-		ofs << layer->GetGridXCount() << "," << layer->GetGridYCount() << "," << layer->GetGridZCount()
-			<< "," << layer->GetOffsetX() << "," << layer->GetOffsetY() << "," << layer->GetOffsetZ() << "," << layer->GetGridSize() << std::endl;
+		ofs << layer->GetGridXCount() << "," << layer->GetGridYCount() << "," << layer->GetGridZCount() << "," << layer->GetOffsetX() << ","
+			<< layer->GetOffsetY() << "," << layer->GetOffsetZ() << "," << layer->GetGridSize() << std::endl;
 
 		for (size_t j = 0; j < layer->GetGrids().size(); j++)
 		{

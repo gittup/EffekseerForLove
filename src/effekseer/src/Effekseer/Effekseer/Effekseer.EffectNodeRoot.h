@@ -16,8 +16,7 @@ namespace Effekseer
 //
 //----------------------------------------------------------------------------------
 
-class EffectNodeRoot
-	: public EffectNodeImplemented
+class EffectNodeRoot : public EffectNodeImplemented
 {
 	friend class Manager;
 	friend class Effect;

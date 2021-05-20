@@ -15,6 +15,7 @@
 #include <array>
 #include <cfloat>
 #include <chrono>
+#include <iterator>
 #include <list>
 #include <map>
 #include <mutex>
@@ -37,11 +38,8 @@ namespace Effekseer
 
 struct Color;
 
-class Manager;
 class ManagerImplemented;
-class Effect;
 class EffectImplemented;
-class EffectNode;
 class EffectNodeImplemented;
 class EffectNodeRoot;
 class EffectNodeSprite;
@@ -54,23 +52,9 @@ class Instance;
 class InstanceChunk;
 class InstanceGroup;
 
-class ParticleRenderer;
-class SpriteRenderer;
-class RibbonRenderer;
-class ModelRenderer;
-class TrackRenderer;
-
-class Setting;
 class FileReader;
 class FileWriter;
 class FileInterface;
-class EffectLoader;
-class TextureLoader;
-class SoundLoader;
-class ModelLoader;
-class MaterialLoader;
-
-class Model;
 class InternalScript;
 
 #ifdef _DEBUG_EFFEKSEER
@@ -125,7 +109,7 @@ public:
 	{
 		std::vector<std::basic_string<T>> elems;
 
-		int32_t start = 0;
+		size_t start = 0;
 
 		for (size_t i = 0; i < s.size(); i++)
 		{

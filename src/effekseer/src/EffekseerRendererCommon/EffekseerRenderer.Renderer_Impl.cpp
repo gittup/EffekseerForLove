@@ -5,7 +5,11 @@
 namespace EffekseerRenderer
 {
 
-void Renderer::Impl::SetCameraParameterInternal(const ::Effekseer::Vec3f& front, const ::Effekseer::Vec3f& position)
+Renderer::Impl::~Impl()
+{
+}
+
+void Renderer::Impl::SetCameraParameterInternal(const ::Effekseer::SIMD::Vec3f& front, const ::Effekseer::SIMD::Vec3f& position)
 {
 	cameraPosition_ = position;
 
@@ -19,7 +23,7 @@ void Renderer::Impl::SetCameraParameterInternal(const ::Effekseer::Vec3f& front,
 	else
 	{
 		std::cout << "Warning : cameraFrontDirection is too small." << std::endl;
-		cameraFrontDirection_ = ::Effekseer::Vec3f{0.0f, 0.0f, 1.0f};
+		cameraFrontDirection_ = ::Effekseer::SIMD::Vec3f{0.0f, 0.0f, 1.0f};
 	}
 }
 
@@ -75,10 +79,10 @@ void Renderer::Impl::SetProjectionMatrix(const ::Effekseer::Matrix44& mat)
 
 void Renderer::Impl::SetCameraMatrix(const ::Effekseer::Matrix44& mat)
 {
-	const auto f = ::Effekseer::Vec3f(mat.Values[0][2], mat.Values[1][2], mat.Values[2][2]);
-	const auto r = ::Effekseer::Vec3f(mat.Values[0][0], mat.Values[1][0], mat.Values[2][0]);
-	const auto u = ::Effekseer::Vec3f(mat.Values[0][1], mat.Values[1][1], mat.Values[2][1]);
-	const auto localPos = ::Effekseer::Vec3f(-mat.Values[3][0], -mat.Values[3][1], -mat.Values[3][2]);
+	const auto f = ::Effekseer::SIMD::Vec3f(mat.Values[0][2], mat.Values[1][2], mat.Values[2][2]);
+	const auto r = ::Effekseer::SIMD::Vec3f(mat.Values[0][0], mat.Values[1][0], mat.Values[2][0]);
+	const auto u = ::Effekseer::SIMD::Vec3f(mat.Values[0][1], mat.Values[1][1], mat.Values[2][1]);
+	const auto localPos = ::Effekseer::SIMD::Vec3f(-mat.Values[3][0], -mat.Values[3][1], -mat.Values[3][2]);
 
 	const auto cameraPosition = r * localPos.GetX() + u * localPos.GetY() + f * localPos.GetZ();
 
@@ -120,7 +124,7 @@ void Renderer::Impl::DeleteProxyTextures(Renderer* renderer)
 	normalProxyTexture_ = nullptr;
 }
 
-::Effekseer::TextureData* Renderer::Impl::GetProxyTexture(EffekseerRenderer::ProxyTextureType type)
+::Effekseer::Backend::TextureRef Renderer::Impl::GetProxyTexture(EffekseerRenderer::ProxyTextureType type)
 {
 	if (type == EffekseerRenderer::ProxyTextureType::White)
 		return whiteProxyTexture_;
@@ -193,6 +197,53 @@ Effekseer::RenderMode Renderer::Impl::GetRenderMode() const
 void Renderer::Impl::SetRenderMode(Effekseer::RenderMode renderMode)
 {
 	renderMode_ = renderMode;
+}
+
+const ::Effekseer::Backend::TextureRef& Renderer::Impl::GetBackground()
+{
+	return backgroundTexture_;
+}
+
+void Renderer::Impl::SetBackground(::Effekseer::Backend::TextureRef texture)
+{
+	backgroundTexture_ = texture;
+}
+
+void Renderer::Impl::GetDepth(::Effekseer::Backend::TextureRef& texture, DepthReconstructionParameter& reconstructionParam)
+{
+	texture = depthTexture_;
+
+	if (texture != nullptr)
+	{
+		reconstructionParam = reconstructionParam_;
+	}
+	else
+	{
+		// return far clip depth
+		const auto projMat = GetProjectionMatrix();
+		reconstructionParam.ProjectionMatrix33 = projMat.Values[2][2];
+		reconstructionParam.ProjectionMatrix43 = projMat.Values[2][3];
+		reconstructionParam.ProjectionMatrix34 = projMat.Values[3][2];
+		reconstructionParam.ProjectionMatrix44 = projMat.Values[3][3];
+
+		if (isDepthReversed)
+		{
+			reconstructionParam.DepthBufferScale = 0.0f;
+			reconstructionParam.DepthBufferOffset = 0.0f;
+		}
+		else
+		{
+
+			reconstructionParam.DepthBufferScale = 0.0f;
+			reconstructionParam.DepthBufferOffset = 1.0f;
+		}
+	}
+}
+
+void Renderer::Impl::SetDepth(::Effekseer::Backend::TextureRef texture, const DepthReconstructionParameter& reconstructionParam)
+{
+	depthTexture_ = texture;
+	reconstructionParam_ = reconstructionParam;
 }
 
 } // namespace EffekseerRenderer

@@ -23,7 +23,7 @@ Layer::~Layer()
 
 bool Layer::AddObject(Object* o)
 {
-	assert(o != NULL);
+	assert(o != nullptr);
 
 	ObjectInternal* o_ = (ObjectInternal*)o;
 
@@ -37,12 +37,7 @@ bool Layer::AddObject(Object* o)
 
 	int32_t ind = xind + yind * this->gridXCount + zind * this->gridXCount * this->gridYCount;
 
-	if (xind < 0 ||
-		xind >= this->gridXCount ||
-		yind < 0 ||
-		yind >= this->gridYCount ||
-		zind < 0 ||
-		zind >= this->gridZCount)
+	if (xind < 0 || xind >= this->gridXCount || yind < 0 || yind >= this->gridYCount || zind < 0 || zind >= this->gridZCount)
 		return false;
 
 	if (ind < 0 || ind >= (int32_t)grids.size())
@@ -55,7 +50,7 @@ bool Layer::AddObject(Object* o)
 
 bool Layer::RemoveObject(Object* o)
 {
-	assert(o != NULL);
+	assert(o != nullptr);
 
 	ObjectInternal* o_ = (ObjectInternal*)o;
 
@@ -69,12 +64,7 @@ bool Layer::RemoveObject(Object* o)
 
 	int32_t ind = xind + yind * this->gridXCount + zind * this->gridXCount * this->gridYCount;
 
-	if (xind < 0 ||
-		xind >= this->gridXCount ||
-		yind < 0 ||
-		yind >= this->gridYCount ||
-		zind < 0 ||
-		zind >= this->gridZCount)
+	if (xind < 0 || xind >= this->gridXCount || yind < 0 || yind >= this->gridYCount || zind < 0 || zind >= this->gridZCount)
 		return false;
 
 	if (ind < 0 || ind >= (int32_t)grids.size())

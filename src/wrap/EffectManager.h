@@ -32,8 +32,8 @@ class EffectManager
 public:
 	EffectManager(bool warn_on_missing_textures);
 
-	::Effekseer::Manager *getManager();
-	::EffekseerRendererGL::Renderer *getRenderer();
+	::Effekseer::ManagerRef getManager();
+	::EffekseerRendererGL::RendererRef getRenderer();
 
 	void setProjection();
 
@@ -44,8 +44,8 @@ public:
 	void draw();
 
 private:
-	::EffekseerRendererGL::Renderer *renderer;
-	::Effekseer::Manager *manager;
+	::EffekseerRendererGL::RendererRef renderer;
+	::Effekseer::ManagerRef manager;
 
 	float updateCounter;
 };

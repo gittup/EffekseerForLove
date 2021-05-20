@@ -11,8 +11,8 @@
 namespace Culling3D
 {
 /**
-	@brief	最大値取得
-	*/
+@brief	最大値取得
+*/
 template <typename T, typename U>
 T Max(T t, U u)
 {
@@ -24,8 +24,8 @@ T Max(T t, U u)
 }
 
 /**
-	@brief	最小値取得
-	*/
+@brief	最小値取得
+*/
 template <typename T, typename U>
 T Min(T t, U u)
 {
@@ -37,8 +37,8 @@ T Min(T t, U u)
 }
 
 /**
-	@brief	範囲内値取得
-	*/
+@brief	範囲内値取得
+*/
 template <typename T, typename U, typename V>
 T Clamp(T t, U max_, V min_)
 {
@@ -58,7 +58,7 @@ T Clamp(T t, U max_, V min_)
 template <class T>
 void SafeAddRef(T& t)
 {
-	if (t != NULL)
+	if (t != nullptr)
 	{
 		t->AddRef();
 	}
@@ -67,10 +67,10 @@ void SafeAddRef(T& t)
 template <class T>
 void SafeRelease(T& t)
 {
-	if (t != NULL)
+	if (t != nullptr)
 	{
 		t->Release();
-		t = NULL;
+		t = nullptr;
 	}
 }
 
@@ -85,20 +85,20 @@ void SafeSubstitute(T& target, T& value)
 template <typename T>
 inline void SafeDelete(T*& p)
 {
-	if (p != NULL)
+	if (p != nullptr)
 	{
 		delete (p);
-		(p) = NULL;
+		(p) = nullptr;
 	}
 }
 
 template <typename T>
 inline void SafeDeleteArray(T*& p)
 {
-	if (p != NULL)
+	if (p != nullptr)
 	{
 		delete[](p);
-		(p) = NULL;
+		(p) = nullptr;
 	}
 }
 
@@ -144,24 +144,24 @@ struct Vector3DF
 	Vector3DF& operator/=(const float& o);
 
 	/**
-		@brief	このベクトルの長さを取得する。
-		*/
+	@brief	このベクトルの長さを取得する。
+	*/
 	float GetLength() const
 	{
 		return sqrtf(GetSquaredLength());
 	}
 
 	/**
-		@brief	このベクトルの長さの二乗を取得する。
-		*/
+	@brief	このベクトルの長さの二乗を取得する。
+	*/
 	float GetSquaredLength() const
 	{
 		return X * X + Y * Y + Z * Z;
 	}
 
 	/**
-		@brief	このベクトルの長さを設定する。
-		*/
+	@brief	このベクトルの長さを設定する。
+	*/
 	void SetLength(float value)
 	{
 		float length = GetLength();
@@ -169,8 +169,8 @@ struct Vector3DF
 	}
 
 	/**
-		@brief	このベクトルの単位ベクトルを取得する。
-		*/
+	@brief	このベクトルの単位ベクトルを取得する。
+	*/
 	Vector3DF GetNormal()
 	{
 		float length = GetLength();
@@ -178,8 +178,8 @@ struct Vector3DF
 	}
 
 	/**
-		@brief	このベクトルの単位ベクトル化する。
-		*/
+	@brief	このベクトルの単位ベクトル化する。
+	*/
 	void Normalize()
 	{
 		float length = GetLength();
@@ -187,21 +187,21 @@ struct Vector3DF
 	}
 
 	/**
-		@brief	内積を取得する。
-		*/
+	@brief	内積を取得する。
+	*/
 	static float Dot(const Vector3DF& v1, const Vector3DF& v2);
 
 	/**
-		@brief	外積を取得する。
-		@note
-		右手系の場合、右手の親指がv1、人差し指がv2としたとき、中指の方向を返す。<BR>
-		左手系の場合、左手の親指がv1、人差し指がv2としたとき、中指の方向を返す。<BR>
-		*/
+	@brief	外積を取得する。
+	@note
+	右手系の場合、右手の親指がv1、人差し指がv2としたとき、中指の方向を返す。<BR>
+	左手系の場合、左手の親指がv1、人差し指がv2としたとき、中指の方向を返す。<BR>
+	*/
 	static Vector3DF Cross(const Vector3DF& v1, const Vector3DF& v2);
 
 	/**
-		@brief	2点間の距離を取得する。
-		*/
+	@brief	2点間の距離を取得する。
+	*/
 	static float Distance(const Vector3DF& v1, const Vector3DF& v2);
 };
 
@@ -214,71 +214,71 @@ struct Matrix44
 	Vector3DF Transform3D(const Vector3DF& in) const;
 
 	/**
-		@brief	カメラ行列(右手系)を設定する。
-		@param	eye	カメラの位置
-		@param	at	カメラの注視点
-		@param	up	カメラの上方向
-		@return	このインスタンスへの参照
-		*/
+	@brief	カメラ行列(右手系)を設定する。
+	@param	eye	カメラの位置
+	@param	at	カメラの注視点
+	@param	up	カメラの上方向
+	@return	このインスタンスへの参照
+	*/
 	Matrix44& SetLookAtRH(const Vector3DF& eye, const Vector3DF& at, const Vector3DF& up);
 
 	/**
-		@brief	カメラ行列(左手系)を設定する。
-		@param	eye	カメラの位置
-		@param	at	カメラの注視点
-		@param	up	カメラの上方向
-		@return	このインスタンスへの参照
-		*/
+	@brief	カメラ行列(左手系)を設定する。
+	@param	eye	カメラの位置
+	@param	at	カメラの注視点
+	@param	up	カメラの上方向
+	@return	このインスタンスへの参照
+	*/
 	Matrix44& SetLookAtLH(const Vector3DF& eye, const Vector3DF& at, const Vector3DF& up);
 
 	/**
-		@brief	射影行列(右手系)を設定する。
-		@param	ovY	Y方向への視野角(ラジアン)
-		@param	aspect	画面のアスペクト比
-		@param	zn	最近距離
-		@param	zf	最遠距離
-		@return	このインスタンスへの参照
-		*/
+	@brief	射影行列(右手系)を設定する。
+	@param	ovY	Y方向への視野角(ラジアン)
+	@param	aspect	画面のアスペクト比
+	@param	zn	最近距離
+	@param	zf	最遠距離
+	@return	このインスタンスへの参照
+	*/
 	Matrix44& SetPerspectiveFovRH(float ovY, float aspect, float zn, float zf);
 
 	/**
-		@brief	OpenGL用射影行列(右手系)を設定する。
-		@param	ovY	Y方向への視野角(ラジアン)
-		@param	aspect	画面のアスペクト比
-		@param	zn	最近距離
-		@param	zf	最遠距離
-		@return	このインスタンスへの参照
-		*/
+	@brief	OpenGL用射影行列(右手系)を設定する。
+	@param	ovY	Y方向への視野角(ラジアン)
+	@param	aspect	画面のアスペクト比
+	@param	zn	最近距離
+	@param	zf	最遠距離
+	@return	このインスタンスへの参照
+	*/
 	Matrix44& SetPerspectiveFovRH_OpenGL(float ovY, float aspect, float zn, float zf);
 
 	/**
-		@brief	射影行列(左手系)を設定する。
-		@param	ovY	Y方向への視野角(ラジアン)
-		@param	aspect	画面のアスペクト比
-		@param	zn	最近距離
-		@param	zf	最遠距離
-		@return	このインスタンスへの参照
-		*/
+	@brief	射影行列(左手系)を設定する。
+	@param	ovY	Y方向への視野角(ラジアン)
+	@param	aspect	画面のアスペクト比
+	@param	zn	最近距離
+	@param	zf	最遠距離
+	@return	このインスタンスへの参照
+	*/
 	Matrix44& SetPerspectiveFovLH(float ovY, float aspect, float zn, float zf);
 
 	/**
-		@brief	正射影行列(右手系)を設定する。
-		@param	width	横幅
-		@param	height	縦幅
-		@param	zn	最近距離
-		@param	zf	最遠距離
-		@return	このインスタンスへの参照
-		*/
+	@brief	正射影行列(右手系)を設定する。
+	@param	width	横幅
+	@param	height	縦幅
+	@param	zn	最近距離
+	@param	zf	最遠距離
+	@return	このインスタンスへの参照
+	*/
 	Matrix44& SetOrthographicRH(float width, float height, float zn, float zf);
 
 	/**
-		@brief	正射影行列(左手系)を設定する。
-		@param	width	横幅
-		@param	height	縦幅
-		@param	zn	最近距離
-		@param	zf	最遠距離
-		@return	このインスタンスへの参照
-		*/
+	@brief	正射影行列(左手系)を設定する。
+	@param	width	横幅
+	@param	height	縦幅
+	@param	zn	最近距離
+	@param	zf	最遠距離
+	@return	このインスタンスへの参照
+	*/
 	Matrix44& SetOrthographicLH(float width, float height, float zn, float zf);
 
 	Matrix44 operator*(const Matrix44& right) const;
@@ -286,12 +286,12 @@ struct Matrix44
 	Vector3DF operator*(const Vector3DF& right) const;
 
 	/**
-		@brief	乗算を行う。
-		@param	o	出力先
-		@param	in1	行列1
-		@param	in2	行列2
-		@return	出力先の参照
-		*/
+	@brief	乗算を行う。
+	@param	o	出力先
+	@param	in1	行列1
+	@param	in2	行列2
+	@return	出力先の参照
+	*/
 	static Matrix44& Mul(Matrix44& o, const Matrix44& in1, const Matrix44& in2);
 };
 
@@ -307,26 +307,25 @@ class IReference
 {
 public:
 	/**
-		@brief	参照カウンタを加算する。
-		@return	加算後の参照カウンタ
-		*/
+	@brief	参照カウンタを加算する。
+	@return	加算後の参照カウンタ
+	*/
 	virtual int AddRef() = 0;
 
 	/**
-		@brief	参照カウンタを取得する。
-		@return	参照カウンタ
-		*/
+	@brief	参照カウンタを取得する。
+	@return	参照カウンタ
+	*/
 	virtual int GetRef() = 0;
 
 	/**
-		@brief	参照カウンタを減算する。0になった時、インスタンスを削除する。
-		@return	減算後の参照カウンタ
-		*/
+	@brief	参照カウンタを減算する。0になった時、インスタンスを削除する。
+	@return	減算後の参照カウンタ
+	*/
 	virtual int Release() = 0;
 };
 
-class World
-	: public IReference
+class World : public IReference
 {
 public:
 	virtual void AddObject(Object* o) = 0;
@@ -345,8 +344,7 @@ public:
 	static World* Create(float xSize, float ySize, float zSize, int32_t layerCount);
 };
 
-class Object
-	: public IReference
+class Object : public IReference
 {
 public:
 	virtual Vector3DF GetPosition() = 0;

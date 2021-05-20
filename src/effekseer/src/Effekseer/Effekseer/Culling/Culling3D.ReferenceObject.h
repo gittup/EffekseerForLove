@@ -5,8 +5,7 @@
 
 namespace Culling3D
 {
-class ReferenceObject
-	: public IReference
+class ReferenceObject : public IReference
 {
 private:
 	int32_t m_reference;
