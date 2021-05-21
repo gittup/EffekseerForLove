@@ -103,6 +103,17 @@ int w_EffectManager_setLocation(lua_State *L)
 	return 0;
 }
 
+int w_EffectManager_setTargetLocation(lua_State *L)
+{
+	EffectManager *manager = *(EffectManager**)luaL_checkudata(L, 1, "EffectManager");
+	::Effekseer::Handle handle = luaL_checkinteger(L, 2);
+	float x = luaL_checknumber(L, 3);
+	float y = luaL_checknumber(L, 4);
+	float z = luaL_optnumber(L, 5, 0.0);
+	LUA_TRYWRAP(manager->getManager()->SetTargetLocation(handle, x, y, z););
+	return 0;
+}
+
 int w_EffectManager_update(lua_State *L)
 {
 	EffectManager *manager = *(EffectManager**)luaL_checkudata(L, 1, "EffectManager");
@@ -125,6 +136,7 @@ const luaL_Reg w_EffectManager_functions[] = {
 	{ "stopAll", w_EffectManager_stopAll },
 	{ "exists", w_EffectManager_exists },
 	{ "setLocation", w_EffectManager_setLocation },
+	{ "setTargetLocation", w_EffectManager_setTargetLocation },
 	{ "update", w_EffectManager_update },
 	{ "draw", w_EffectManager_draw },
 };
