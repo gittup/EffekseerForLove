@@ -123,6 +123,17 @@ int w_EffectManager_setSpeed(lua_State *L)
 	return 0;
 }
 
+int w_EffectManager_setRotation(lua_State *L)
+{
+	EffectManager *manager = *(EffectManager**)luaL_checkudata(L, 1, "EffectManager");
+	::Effekseer::Handle handle = luaL_checkinteger(L, 2);
+	float x = luaL_checknumber(L, 3);
+	float y = luaL_checknumber(L, 4);
+	float z = luaL_checknumber(L, 5);
+	LUA_TRYWRAP(manager->getManager()->SetRotation(handle, x, y, z););
+	return 0;
+}
+
 int w_EffectManager_update(lua_State *L)
 {
 	EffectManager *manager = *(EffectManager**)luaL_checkudata(L, 1, "EffectManager");
@@ -147,6 +158,7 @@ const luaL_Reg w_EffectManager_functions[] = {
 	{ "setLocation", w_EffectManager_setLocation },
 	{ "setTargetLocation", w_EffectManager_setTargetLocation },
 	{ "setSpeed", w_EffectManager_setSpeed },
+	{ "setRotation", w_EffectManager_setRotation },
 	{ "update", w_EffectManager_update },
 	{ "draw", w_EffectManager_draw },
 };
