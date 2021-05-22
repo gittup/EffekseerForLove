@@ -136,8 +136,8 @@ int w_EffectManager_setScale(lua_State *L)
 	EffectManager *manager = *(EffectManager**)luaL_checkudata(L, 1, "EffectManager");
 	::Effekseer::Handle handle = luaL_checkinteger(L, 2);
 	float x = luaL_checknumber(L, 3);
-	float y = luaL_checknumber(L, 4);
-	float z = luaL_checknumber(L, 5);
+	float y = luaL_optnumber(L, 4, x);
+	float z = luaL_optnumber(L, 5, x);
 	LUA_TRYWRAP(manager->getManager()->SetScale(handle, x, y, z););
 	return 0;
 }
