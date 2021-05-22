@@ -62,7 +62,7 @@ int w_EffectManager_play(lua_State *L)
 	::Effekseer::Handle handle = 0;
 	LUA_TRYWRAP(handle = manager->getManager()->Play(effect, ::Effekseer::Vector3D(x, y, z)););
 	// Scale x/y to make effects large enough to be seen, inverting y axis
-	manager->getManager()->SetScale(handle, 10.0, -10.0, 1.0);
+	manager->getManager()->SetScale(handle, 10.0, -10.0, 10.0);
 	lua_pushinteger(L, handle);
 	return 1;
 }
