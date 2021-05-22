@@ -75,6 +75,14 @@ int w_EffectManager_stop(lua_State *L)
 	return 0;
 }
 
+int w_EffectManager_stopRoot(lua_State *L)
+{
+	EffectManager *manager = *(EffectManager**)luaL_checkudata(L, 1, "EffectManager");
+	::Effekseer::Handle handle = luaL_checkinteger(L, 2);
+	LUA_TRYWRAP(manager->getManager()->StopRoot(handle););
+	return 0;
+}
+
 int w_EffectManager_stopAll(lua_State *L)
 {
 	EffectManager *manager = *(EffectManager**)luaL_checkudata(L, 1, "EffectManager");
@@ -164,6 +172,7 @@ const luaL_Reg w_EffectManager_functions[] = {
 	{ "newEffect", w_EffectManager_newEffect },
 	{ "play", w_EffectManager_play },
 	{ "stop", w_EffectManager_stop },
+	{ "stopRoot", w_EffectManager_stopRoot },
 	{ "stopAll", w_EffectManager_stopAll },
 	{ "exists", w_EffectManager_exists },
 	{ "setLocation", w_EffectManager_setLocation },
