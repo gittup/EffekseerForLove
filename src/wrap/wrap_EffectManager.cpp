@@ -45,6 +45,9 @@ int w_EffectManager_newEffect(lua_State *L)
 	EFK_CHAR filename16[256];
 	::Effekseer::ConvertUtf8ToUtf16(filename16, 256, filename.c_str());
 	LUA_TRYWRAP(effect = Effekseer::Effect::Create(manager->getManager(), filename16););
+	if(!effect) {
+		luaL_error(L, "Failed to load effect (make sure it is a valid .efk file): %s", filename.c_str());
+	}
 	::Effekseer::Effect **dat = (::Effekseer::Effect**)lua_newuserdata(L, sizeof(::Effekseer::Effect*));
 	*dat = effect;
 	luaL_getmetatable(L, "Effect");

@@ -365,6 +365,9 @@ Effect* Effect::Create(Manager* manager, const EFK_CHAR* path, float magnificati
 
 	Effect* effect = EffectImplemented::Create(manager, data, size, magnification, materialPath);
 
+	if(!effect) {
+		return NULL;
+	}
 	eLoader->Unload(data, size);
 
 	effect->SetName(getFilenameWithoutExt(path).c_str());
