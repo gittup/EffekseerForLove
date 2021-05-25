@@ -31,7 +31,11 @@ lua_State *L;
 int w_newEffectManager(lua_State *L)
 {
 	EffectManager *manager = nullptr;
-	LUA_TRYWRAP(manager = new EffectManager(););
+	bool warn_on_missing_textures = false;
+	if(lua_isboolean(L, 1)) {
+		warn_on_missing_textures = lua_toboolean(L, 1);
+	}
+	LUA_TRYWRAP(manager = new EffectManager(warn_on_missing_textures););
 	EffectManager **dat = (EffectManager**)lua_newuserdata(L, sizeof(EffectManager*));
 	*dat = manager;
 	luaL_getmetatable(L, "EffectManager");

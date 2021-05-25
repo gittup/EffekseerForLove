@@ -73,6 +73,7 @@ void *file_read(const char *path, size_t &size)
 
 static ::EffekseerRendererGL::Renderer *renderer;
 static ::Effekseer::Manager *manager;
+static bool g_warn_on_missing_textures = false;
 
 class LoveTextureLoader : public ::Effekseer::TextureLoader
 {
@@ -93,7 +94,14 @@ public:
 
 		lua_prep("love.image.newImageData");
 		lua_pushstring(L, path);
-		lua_call(L, 1, 1);
+		int ret = lua_pcall(L, 1, 1, 0);
+		if(ret != 0) {
+			if(g_warn_on_missing_textures) {
+				fprintf(stderr, "Missing Effekseer texture: %s\n", path);
+				return NULL;
+			}
+			luaL_error(L, "Missing Effekseer texture: %s\n", path);
+		}
 
 		lua_getfield(L, -1, "getWidth");
 		lua_pushvalue(L, -2);
@@ -182,8 +190,9 @@ public:
 	}
 };
 
-EffectManager::EffectManager()
+EffectManager::EffectManager(bool warn_on_missing_textures)
 {
+	g_warn_on_missing_textures = warn_on_missing_textures;
 #ifdef EMSCRIPTEN
 	renderer = ::EffekseerRendererGL::Renderer::Create(8000, EffekseerRendererGL::OpenGLDeviceType::Emscripten);
 #else

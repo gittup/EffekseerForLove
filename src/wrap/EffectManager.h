@@ -30,7 +30,7 @@ class Effect;
 class EffectManager
 {
 public:
-	EffectManager();
+	EffectManager(bool warn_on_missing_textures);
 
 	::Effekseer::Manager *getManager();
 	::EffekseerRendererGL::Renderer *getRenderer();
