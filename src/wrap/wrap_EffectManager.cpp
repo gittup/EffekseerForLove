@@ -42,9 +42,14 @@ int w_EffectManager_newEffect(lua_State *L)
 	EffectManager *manager = *(EffectManager**)luaL_checkudata(L, 1, "EffectManager");
 	::Effekseer::Effect *effect = nullptr;
 	std::string filename = luaL_checkstring(L, 2);
+
+	// Default to a 10.0 magnification. This seems to work pretty well for
+	// most effects on 1080p
+	float magnification = luaL_optnumber(L, 3, 10.0);
+
 	EFK_CHAR filename16[256];
 	::Effekseer::ConvertUtf8ToUtf16(filename16, 256, filename.c_str());
-	LUA_TRYWRAP(effect = Effekseer::Effect::Create(manager->getManager(), filename16););
+	LUA_TRYWRAP(effect = Effekseer::Effect::Create(manager->getManager(), filename16, magnification););
 	if(!effect) {
 		luaL_error(L, "Failed to load effect (make sure it is a valid .efk file): %s", filename.c_str());
 	}
@@ -64,8 +69,8 @@ int w_EffectManager_play(lua_State *L)
 	float z = luaL_optnumber(L, 5, 0.0);
 	::Effekseer::Handle handle = 0;
 	LUA_TRYWRAP(handle = manager->getManager()->Play(effect, ::Effekseer::Vector3D(x, y, z)););
-	// Scale x/y to make effects large enough to be seen, inverting y axis
-	manager->getManager()->SetScale(handle, 10.0, -10.0, 10.0);
+	// Invert y axis so coordinates match love's
+	manager->getManager()->SetScale(handle, 1.0, -1.0, 1.0);
 	lua_pushinteger(L, handle);
 	return 1;
 }
