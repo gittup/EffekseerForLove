@@ -190,6 +190,38 @@ public:
 	}
 };
 
+class LoveModelLoader : public ::Effekseer::ModelLoader
+{
+public:
+	LoveModelLoader()
+	{
+	}
+
+	~LoveModelLoader()
+	{
+	}
+
+	void *Load(const EFK_CHAR* efkpath)
+	{
+		void *data = NULL;
+		int32_t size = 0;
+
+		char path[256];
+		::Effekseer::ConvertUtf16ToUtf8((int8_t*)path, 256, (const int16_t*)efkpath);
+		size_t fdsize = 0;
+		data = file_read(path, fdsize);
+		size = fdsize;
+		Model *model = new Model(data, size);
+		return model;
+	}
+
+	void Unload(void* data)
+	{
+		Model *model = (Model*)data;
+		delete model;
+	}
+};
+
 EffectManager::EffectManager(bool warn_on_missing_textures)
 {
 	g_warn_on_missing_textures = warn_on_missing_textures;
@@ -213,7 +245,7 @@ EffectManager::EffectManager(bool warn_on_missing_textures)
 
 	manager->SetEffectLoader(new LoveEffectLoader());
 	manager->SetTextureLoader(new LoveTextureLoader());
-	manager->SetModelLoader(renderer->CreateModelLoader());
+	manager->SetModelLoader(new LoveModelLoader());
 	manager->SetMaterialLoader(renderer->CreateMaterialLoader());
 
 	updateCounter = 0.0f;

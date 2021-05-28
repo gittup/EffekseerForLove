@@ -16,7 +16,6 @@
 //#include "EffekseerRendererGL.RingRenderer.h"
 //#include "EffekseerRendererGL.TrackRenderer.h"
 #include "EffekseerRendererGL.MaterialLoader.h"
-#include "EffekseerRendererGL.ModelLoader.h"
 #include "EffekseerRendererGL.ModelRenderer.h"
 #include "EffekseerRendererGL.TextureLoader.h"
 
