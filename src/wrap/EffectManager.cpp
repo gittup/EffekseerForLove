@@ -258,7 +258,7 @@ void EffectManager::setProjection()
 
 	lua_pop(L, 1);
 
-	::Effekseer::Matrix44 proj = ::Effekseer::Matrix44().OrthographicRH((float)windowWidth, (float)windowHeight, -128.0, 128.0);
+	::Effekseer::Matrix44 proj = ::Effekseer::Matrix44().OrthographicRH((float)windowWidth, (float)windowHeight, -512.0, 512.0);
 
 	// Invert y axis
 	proj.Values[1][1] = -proj.Values[1][1];
