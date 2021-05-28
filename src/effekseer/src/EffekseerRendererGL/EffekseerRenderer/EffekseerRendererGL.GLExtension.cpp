@@ -83,6 +83,8 @@ typedef GLboolean(EFK_STDCALL* FP_glUnmapBuffer)(GLenum target);
 
 typedef void(EFK_STDCALL* FP_glCompressedTexImage2D)(GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLint border, GLsizei imageSize, const void* data);
 
+typedef void(EFK_STDCALL* FP_glGetVertexAttribiv)(GLuint index, GLenum pname, GLint *params);
+
 static FP_glDeleteBuffers g_glDeleteBuffers = NULL;
 static FP_glCreateShader g_glCreateShader = NULL;
 static FP_glBindBuffer g_glBindBuffer = NULL;
@@ -127,6 +129,7 @@ static FP_glMapBufferRange g_glMapBufferRange = NULL;
 static FP_glUnmapBuffer g_glUnmapBuffer = NULL;
 
 static FP_glCompressedTexImage2D g_glCompressedTexImage2D = nullptr;
+static FP_glGetVertexAttribiv g_glGetVertexAttribiv = nullptr;
 
 #elif defined(__EFFEKSEER_RENDERER_GLES2__)
 
@@ -231,6 +234,7 @@ bool Initialize(OpenGLDeviceType deviceType)
 	GET_PROC(glUnmapBuffer);
 
 	GET_PROC(glCompressedTexImage2D);
+	GET_PROC(glGetVertexAttribiv);
 
 	g_isSupportedVertexArray = (g_glGenVertexArrays && g_glDeleteVertexArrays && g_glBindVertexArray);
 	g_isSurrpotedBufferRange = (g_glMapBufferRange && g_glUnmapBuffer);
@@ -730,6 +734,15 @@ void glCompressedTexImage2D(GLenum target, GLint level, GLenum internalformat, G
 #elif defined(__EFFEKSEER_RENDERER_GLES2__) || defined(__EFFEKSEER_RENDERER_GL2__)
 #else
 	::glCompressedTexImage2D(target, level, internalformat, width, height, border, imageSize, data);
+#endif
+}
+
+void glGetVertexAttribiv(GLuint index, GLenum pname, GLint *params)
+{
+#if _WIN32
+	g_glGetVertexAttribiv(index, pname, params);
+#else
+	::glGetVertexAttribiv(index, pname, params);
 #endif
 }
 

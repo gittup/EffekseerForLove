@@ -54,6 +54,7 @@ namespace GLExt
 #define GL_CURRENT_PROGRAM 0x8B8D
 
 #define GL_VERTEX_ARRAY_BINDING 0x85B5
+#define GL_VERTEX_ATTRIB_ARRAY_ENABLED 0x8622
 #define GL_ARRAY_BUFFER_BINDING 0x8894
 #define GL_ELEMENT_ARRAY_BUFFER_BINDING 0x8895
 
@@ -137,6 +138,8 @@ void* glMapBufferRange(GLenum target, GLintptr offset, GLsizeiptr length, GLbitf
 GLboolean glUnmapBuffer(GLenum target);
 
 void glCompressedTexImage2D(GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLint border, GLsizei imageSize, const void* data);
+
+void glGetVertexAttribiv(GLuint index, GLenum pname, GLint *params);
 
 //----------------------------------------------------------------------------------
 //
