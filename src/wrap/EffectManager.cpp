@@ -303,9 +303,6 @@ void EffectManager::draw()
 {
 	setProjection();
 
-	GLint prog;
-	glGetIntegerv(GL_CURRENT_PROGRAM, &prog);
-
 #ifdef __EMSCRIPTEN__
 	/* Effekseer normally restores the bound vertex array to the original
 	 * state, which resets all enabled vertex attrib arrays. However in
@@ -329,7 +326,6 @@ void EffectManager::draw()
 	manager->Draw();
 	renderer->EndRendering();
 
-	GLExt::glUseProgram(prog); // TODO Effekseer changes the glUseProgram to something else, so we need to restore it, otherwise everything done in love.draw() doesn't show up.
 #ifdef __EMSCRIPTEN__
 	for(size_t i=0; i<vertex_enabled.size(); i++) {
 		if(vertex_enabled[i]) {
