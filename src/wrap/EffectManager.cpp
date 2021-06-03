@@ -306,6 +306,14 @@ void EffectManager::draw()
 	GLint prog;
 	glGetIntegerv(GL_CURRENT_PROGRAM, &prog);
 
+#ifdef __EMSCRIPTEN__
+	/* Effekseer normally restores the bound vertex array to the original
+	 * state, which resets all enabled vertex attrib arrays. However in
+	 * love.js, LOVE doesn't use glBindVertexArray internally, so there is
+	 * no previous array to return to. This makes LOVE and Effekseer step
+	 * on each others' toes. Instead we can query all vertex attrib arrays,
+	 * and reset them to their original states.
+	 */
 	std::vector<bool> vertex_enabled;
 	GLint num;
 	glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &num);
@@ -315,12 +323,14 @@ void EffectManager::draw()
 		GLExt::glDisableVertexAttribArray(i);
 		vertex_enabled.push_back(enabled);
 	}
+#endif
 
 	renderer->BeginRendering();
 	manager->Draw();
 	renderer->EndRendering();
 
 	GLExt::glUseProgram(prog); // TODO Effekseer changes the glUseProgram to something else, so we need to restore it, otherwise everything done in love.draw() doesn't show up.
+#ifdef __EMSCRIPTEN__
 	for(size_t i=0; i<vertex_enabled.size(); i++) {
 		if(vertex_enabled[i]) {
 			GLExt::glEnableVertexAttribArray(i);
@@ -328,4 +338,5 @@ void EffectManager::draw()
 			GLExt::glDisableVertexAttribArray(i);
 		}
 	}
+#endif
 }
