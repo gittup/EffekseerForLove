@@ -147,7 +147,8 @@ int w_EffectManager_setScale(lua_State *L)
 	float x = luaL_checknumber(L, 3);
 	float y = luaL_optnumber(L, 4, x);
 	float z = luaL_optnumber(L, 5, x);
-	LUA_TRYWRAP(manager->getManager()->SetScale(handle, x, y, z););
+	// Invert y axis so coordinates match love's
+	LUA_TRYWRAP(manager->getManager()->SetScale(handle, x, -y, z););
 	return 0;
 }
 
