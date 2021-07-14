@@ -46,7 +46,6 @@ Then you'll need to update cross-macosx.lua for your setup before building.
 To cross compile from Linux to Windows, you'll need:
 
  - A cross compiler (cross-win.lua is setup with `x86_64-w64-mingw32-g++-posix` from the `g++-mingw-w64-x86-64` package on Ubuntu)
- - The SDL2 development library (https://www.libsdl.org/release/SDL2-devel-2.0.14-mingw.tar.gz)
  - luajit (https://luajit.org/git/luajit.git) built for Windows (eg: `make HOST_CC="gcc" CROSS=x86_64-w64-mingw32- TARGET_SYS=Windows`).
 
 You'll need to edit cross-win.lua for your setup before building
