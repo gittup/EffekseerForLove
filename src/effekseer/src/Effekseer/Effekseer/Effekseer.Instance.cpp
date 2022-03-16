@@ -319,7 +319,10 @@ void Instance::FirstUpdate()
 	if (parameter->CommonValues.TranslationBindType == TranslationParentBindType::WhenCreating ||
 		parameter->CommonValues.TranslationBindType == TranslationParentBindType::WhenCreating_FollowParent ||
 		parameter->CommonValues.RotationBindType == BindType::WhenCreating ||
-		parameter->CommonValues.ScalingBindType == BindType::WhenCreating)
+		parameter->CommonValues.ScalingBindType == BindType::WhenCreating ||
+		(parameter->CommonValues.TranslationBindType == TranslationParentBindType::Always &&
+		 parameter->CommonValues.RotationBindType == BindType::Always &&
+		 parameter->CommonValues.ScalingBindType == BindType::Always))
 	{
 		m_ParentMatrix = parentMatrix;
 		assert(m_ParentMatrix.IsValid());
@@ -980,7 +983,18 @@ void Instance::FirstUpdate()
 		}
 	}
 
-	prevGlobalPosition_ = SIMD::Vec3f::Transform(prevPosition_, m_ParentMatrix);
+	if (m_pEffectNode->GenerationLocation.EffectsRotation)
+	{
+		auto tempPrevPosition = prevPosition_;
+		tempPrevPosition += m_GenerationLocation.GetTranslation();
+		prevGlobalPosition_ = SIMD::Vec3f::Transform(tempPrevPosition, m_ParentMatrix);
+	}
+	else
+	{
+		prevPosition_ += m_GenerationLocation.GetTranslation();
+		prevGlobalPosition_ = SIMD::Vec3f::Transform(prevPosition_, m_ParentMatrix);
+	}
+	
 	m_pEffectNode->InitializeRenderedInstance(*this, *ownGroup_, m_pManager);
 }
 
@@ -1340,11 +1354,9 @@ void Instance::CalculateMatrix(float deltaFrame)
 			localPosition = {0, 0, 0};
 		}
 
-		// Velocitty
-		SIMD::Vec3f localVelocity = SIMD::Vec3f(0, 0, 0);
-		if (m_pEffectNode->LocalForceField.HasValue)
+		if (!m_pEffectNode->GenerationLocation.EffectsRotation)
 		{
-			localVelocity = localPosition - prevPosition_;
+			localPosition += m_GenerationLocation.GetTranslation();
 		}
 
 		if (m_pEffectNode->CommonValues.TranslationBindType == TranslationParentBindType::NotBind_FollowParent ||
@@ -1376,12 +1388,14 @@ void Instance::CalculateMatrix(float deltaFrame)
 			localPosition += followVelocity;
 		}
 
-		prevPosition_ = localPosition;
-
-		if (!m_pEffectNode->GenerationLocation.EffectsRotation)
+		// Velocitty
+		SIMD::Vec3f localVelocity = SIMD::Vec3f(0, 0, 0);
+		if (m_pEffectNode->LocalForceField.HasValue)
 		{
-			localPosition += m_GenerationLocation.GetTranslation();
+			localVelocity = localPosition - prevPosition_;
 		}
+
+		prevPosition_ = localPosition;
 
 		/* 回転の更新(時間から直接求めれるよう対応済み) */
 		if (m_pEffectNode->RotationType == ParameterRotationType_None)
@@ -1482,6 +1496,9 @@ void Instance::CalculateMatrix(float deltaFrame)
 			// It should be used a result of past frame
 			auto location = SIMD::Mat43f::Translation(localPosition);
 			location *= m_GenerationLocation;
+			
+			
+			localVelocity = SIMD::Vec3f::Transform(localVelocity, m_GenerationLocation.GetRotation());
 			currentLocalPosition = location.GetTranslation();
 		}
 		else

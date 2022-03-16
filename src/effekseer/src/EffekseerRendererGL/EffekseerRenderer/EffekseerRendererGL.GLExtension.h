@@ -94,10 +94,8 @@ namespace GLExt
 #define GL_COMPILE_STATUS 0x8B81
 #define GL_LINK_STATUS 0x8B82
 #define GL_CURRENT_PROGRAM 0x8B8D
-#define GL_MAX_VERTEX_ATTRIBS 0x8869
 
 #define GL_VERTEX_ARRAY_BINDING 0x85B5
-#define GL_VERTEX_ATTRIB_ARRAY_ENABLED 0x8622
 #define GL_ARRAY_BUFFER_BINDING 0x8894
 #define GL_ELEMENT_ARRAY_BUFFER_BINDING 0x8895
 
@@ -121,17 +119,11 @@ namespace GLExt
 #define GL_R8 0x8229
 #define GL_RG 0x8227
 #define GL_BGRA 0x80E1
-#ifndef GL_RG16F
 #define GL_RG16F 0x822f
-#endif
 
-#ifndef GL_HALF_FLOAT
 #define GL_HALF_FLOAT 0x140b
-#endif
 
-#ifndef GL_RGBA16F
 #define GL_RGBA16F 0x881a
-#endif
 #define GL_RGBA32F 0x8814
 
 #define GL_DEPTH24_STENCIL8 0x88F0
@@ -141,9 +133,9 @@ namespace GLExt
 
 #define GL_DEPTH_STENCIL 0x84F9
 
-#ifndef GL_WRITE_ONLY
+//#ifndef GL_WRITE_ONLY
 #define GL_WRITE_ONLY 0x000088b9
-#endif
+//#endif
 
 #define GL_FRAMEBUFFER 0x8D40
 #define GL_FRAMEBUFFER_BINDING 0x8CA6
@@ -254,8 +246,6 @@ void glFramebufferTexture2D(GLenum target,
 							GLint level);
 
 void glDrawBuffers(GLsizei n, const GLenum* bufs);
-
-void glGetVertexAttribiv(GLuint index, GLenum pname, GLint *params);
 
 //----------------------------------------------------------------------------------
 //

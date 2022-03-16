@@ -345,7 +345,7 @@ protected:
 				auto frontDirection = renderer->GetCameraFrontDirection();
 				if (!param.IsRightHand)
 				{
-					frontDirection.Z = -frontDirection.Z;
+					frontDirection = -frontDirection;
 				}
 
 				keyValues_[i].Key = Effekseer::SIMD::Vec3f::Dot(t, frontDirection);
@@ -466,6 +466,7 @@ protected:
 		predefined_uniforms.fill(0.5f);
 		predefined_uniforms[0] = renderer->GetTime();
 		predefined_uniforms[1] = param.Magnification;
+		predefined_uniforms[2] = renderer->GetImpl()->MaintainGammaColorInLinearColorSpace ? 1.0f : 0.0f;
 
 		// vs
 		int32_t vsOffset = sizeof(Effekseer::Matrix44) + (sizeof(Effekseer::Matrix44) + sizeof(float) * 4 * 2) * InstanceCount;
@@ -625,6 +626,8 @@ protected:
 		else
 		{
 			auto pcb = (PixelConstantBuffer*)shader_->GetPixelConstantBuffer();
+			pcb->MiscFlags.fill(0.0f);
+			pcb->MiscFlags[0] = renderer->GetImpl()->MaintainGammaColorInLinearColorSpace ? 1.0f : 0.0f;
 
 			// specify predefined parameters
 			if (param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::Lighting)
@@ -924,7 +927,8 @@ public:
 			}
 		}
 
-		auto distortion = param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::BackDistortion;
+		auto distortion = collector_.ShaderType == EffekseerRenderer::RendererShaderType::BackDistortion ||
+						  collector_.ShaderType == EffekseerRenderer::RendererShaderType::AdvancedBackDistortion;
 
 		if (isBackgroundRequired && renderer->GetBackground() == 0)
 			return;
@@ -979,12 +983,6 @@ public:
 			{
 				shader_ = (SHADER*)material->ModelUserPtr;
 			}
-
-			// validate
-			if (shader_ == nullptr)
-			{
-				return;
-			}
 		}
 		else
 		{
@@ -994,7 +992,7 @@ public:
 				{
 					shader_ = advanced_shader_distortion;
 				}
-				else if (param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::Lighting)
+				else if (collector_.ShaderType == EffekseerRenderer::RendererShaderType::AdvancedLit)
 				{
 					shader_ = advanced_shader_lit;
 				}
@@ -1009,7 +1007,7 @@ public:
 				{
 					shader_ = shader_distortion;
 				}
-				else if (param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::Lighting)
+				else if (collector_.ShaderType == EffekseerRenderer::RendererShaderType::Lit)
 				{
 					shader_ = shader_lit;
 				}
@@ -1018,6 +1016,11 @@ public:
 					shader_ = shader_unlit;
 				}
 			}
+		}
+		// validate
+		if (shader_ == nullptr)
+		{
+			return;
 		}
 
 		RenderStateBase::State& state = renderer->GetRenderState()->Push();

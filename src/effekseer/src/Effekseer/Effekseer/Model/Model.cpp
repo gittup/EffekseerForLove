@@ -13,6 +13,12 @@ Model::Model(const CustomVector<Vertex>& vertecies, const CustomVector<Face>& fa
 
 Model::Model(const void* data, int32_t size)
 {
+	if (data == nullptr)
+	{
+		models_.resize(1);
+		return;
+	}
+
 	const uint8_t* p = (const uint8_t*)data;
 
 	memcpy(&version_, p, sizeof(int32_t));
@@ -305,7 +311,7 @@ Model::Emitter Model::GetEmitterFromFace(int32_t index, int32_t time, Coordinate
 	return emitter;
 }
 
-bool Model::StoreBufferToGPU(Backend::GraphicsDevice* graphicsDevice)
+bool Model::StoreBufferToGPU(Backend::GraphicsDevice* graphicsDevice, bool flipVertexColor)
 {
 	if (isBufferStoredOnGPU_)
 	{
@@ -319,6 +325,22 @@ bool Model::StoreBufferToGPU(Backend::GraphicsDevice* graphicsDevice)
 
 	for (int32_t f = 0; f < GetFrameCount(); f++)
 	{
+		if (flipVertexColor)
+		{
+			auto vdata = models_[f].vertexes;
+
+			for (auto& v : vdata)
+			{
+				std::swap(v.VColor.R, v.VColor.B);
+			}
+
+			models_[f].vertexBuffer = graphicsDevice->CreateVertexBuffer(sizeof(Effekseer::Model::Vertex) * GetVertexCount(f), vdata.data(), false);
+			if (models_[f].vertexBuffer == nullptr)
+			{
+				return false;
+			}
+		}
+		else
 		{
 			models_[f].vertexBuffer = graphicsDevice->CreateVertexBuffer(sizeof(Effekseer::Model::Vertex) * GetVertexCount(f), models_[f].vertexes.data(), false);
 			if (models_[f].vertexBuffer == nullptr)

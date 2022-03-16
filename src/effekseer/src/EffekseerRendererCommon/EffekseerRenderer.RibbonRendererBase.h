@@ -668,10 +668,10 @@ protected:
 				{
 					const auto packedNormal = PackVector3DF(normal);
 					const auto packedTangent = PackVector3DF(tangent);
-					vs_[0].SetPackedNormal(packedNormal);
-					vs_[0].SetPackedTangent(packedTangent);
-					vs_[1].SetPackedNormal(packedNormal);
-					vs_[1].SetPackedTangent(packedTangent);
+					vs_[0].SetPackedNormal(packedNormal, FLIP_RGB);
+					vs_[0].SetPackedTangent(packedTangent, FLIP_RGB);
+					vs_[1].SetPackedNormal(packedNormal, FLIP_RGB);
+					vs_[1].SetPackedTangent(packedTangent, FLIP_RGB);
 
 					vs_ += 2;
 				}
@@ -679,10 +679,10 @@ protected:
 				{
 					const auto packedNormal = PackVector3DF(normal);
 					const auto packedTangent = PackVector3DF(tangent);
-					vs_[0].SetPackedNormal(packedNormal);
-					vs_[0].SetPackedTangent(packedTangent);
-					vs_[1].SetPackedNormal(packedNormal);
-					vs_[1].SetPackedTangent(packedTangent);
+					vs_[0].SetPackedNormal(packedNormal, FLIP_RGB);
+					vs_[0].SetPackedTangent(packedTangent, FLIP_RGB);
+					vs_[1].SetPackedNormal(packedNormal, FLIP_RGB);
+					vs_[1].SetPackedTangent(packedTangent, FLIP_RGB);
 
 					vs_ += 2;
 				}
@@ -690,14 +690,14 @@ protected:
 				{
 					const auto packedNormal = PackVector3DF(normal);
 					const auto packedTangent = PackVector3DF(tangent);
-					vs_[0].SetPackedNormal(packedNormal);
-					vs_[0].SetPackedTangent(packedTangent);
-					vs_[1].SetPackedNormal(packedNormal);
-					vs_[1].SetPackedTangent(packedTangent);
-					vs_[2].SetPackedNormal(packedNormal);
-					vs_[2].SetPackedTangent(packedTangent);
-					vs_[3].SetPackedNormal(packedNormal);
-					vs_[3].SetPackedTangent(packedTangent);
+					vs_[0].SetPackedNormal(packedNormal, FLIP_RGB);
+					vs_[0].SetPackedTangent(packedTangent, FLIP_RGB);
+					vs_[1].SetPackedNormal(packedNormal, FLIP_RGB);
+					vs_[1].SetPackedTangent(packedTangent, FLIP_RGB);
+					vs_[2].SetPackedNormal(packedNormal, FLIP_RGB);
+					vs_[2].SetPackedTangent(packedTangent, FLIP_RGB);
+					vs_[3].SetPackedNormal(packedNormal, FLIP_RGB);
+					vs_[3].SetPackedTangent(packedTangent, FLIP_RGB);
 
 					vs_ += 4;
 				}
@@ -762,6 +762,11 @@ protected:
 					const efkRibbonInstanceParam& instanceParameter,
 					const ::Effekseer::SIMD::Mat44f& camera)
 	{
+		if (m_ringBufferData == nullptr)
+			return;
+		if (instanceParameter.InstanceCount <= 1)
+			return;
+
 		const auto& state = m_renderer->GetStandardRenderer()->GetState();
 		const ShaderParameterCollector& collector = state.Collector;
 		if (collector.ShaderType == RendererShaderType::Material)
@@ -891,9 +896,7 @@ public:
 		customData1Count_ = state.CustomData1Count;
 		customData2Count_ = state.CustomData2Count;
 
-		m_renderer->GetStandardRenderer()->UpdateStateAndRenderingIfRequired(state);
-
-		m_renderer->GetStandardRenderer()->BeginRenderingAndRenderingIfRequired(vertexCount, stride_, (void*&)m_ringBufferData);
+		m_renderer->GetStandardRenderer()->BeginRenderingAndRenderingIfRequired(state, vertexCount, stride_, (void*&)m_ringBufferData);
 		vertexCount_ = vertexCount;
 	}
 

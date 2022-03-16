@@ -747,13 +747,13 @@ protected:
 					Effekseer::Color normal_ = PackVector3DF(normal);
 					Effekseer::Color tangent_ = PackVector3DF(tangent);
 
-					vl.SetPackedNormal(normal_);
-					vm.SetPackedNormal(normal_);
-					vr.SetPackedNormal(normal_);
+					vl.SetPackedNormal(normal_, FLIP_RGB);
+					vm.SetPackedNormal(normal_, FLIP_RGB);
+					vr.SetPackedNormal(normal_, FLIP_RGB);
 
-					vl.SetPackedTangent(tangent_);
-					vm.SetPackedTangent(tangent_);
-					vr.SetPackedTangent(tangent_);
+					vl.SetPackedTangent(tangent_, FLIP_RGB);
+					vm.SetPackedTangent(tangent_, FLIP_RGB);
+					vr.SetPackedTangent(tangent_, FLIP_RGB);
 				}
 
 				if (isFirst_)
@@ -861,6 +861,11 @@ protected:
 					const efkTrackInstanceParam& instanceParameter,
 					const ::Effekseer::SIMD::Mat44f& camera)
 	{
+		if (m_ringBufferData == nullptr)
+			return;
+		if (instanceParameter.InstanceCount <= 1)
+			return;
+
 		const auto& state = m_renderer->GetStandardRenderer()->GetState();
 		const ShaderParameterCollector& collector = state.Collector;
 
@@ -981,9 +986,7 @@ public:
 		customData1Count_ = state.CustomData1Count;
 		customData2Count_ = state.CustomData2Count;
 
-		m_renderer->GetStandardRenderer()->UpdateStateAndRenderingIfRequired(state);
-
-		m_renderer->GetStandardRenderer()->BeginRenderingAndRenderingIfRequired(vertexCount, stride_, (void*&)m_ringBufferData);
+		m_renderer->GetStandardRenderer()->BeginRenderingAndRenderingIfRequired(state, vertexCount, stride_, (void*&)m_ringBufferData);
 		vertexCount_ = vertexCount;
 	}
 };

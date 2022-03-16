@@ -83,14 +83,24 @@ struct DynamicVertex
 		}
 	}
 
-	void SetPackedNormal(const VertexColor& normal)
+	void SetPackedNormal(const VertexColor& normal, bool flipRGB)
 	{
 		Normal = normal;
+
+		if (flipRGB)
+		{
+			std::swap(Normal.R, Normal.B);
+		}
 	}
 
-	void SetPackedTangent(const VertexColor& tangent)
+	void SetPackedTangent(const VertexColor& tangent, bool flipRGB)
 	{
 		Tangent = tangent;
+
+		if (flipRGB)
+		{
+			std::swap(Tangent.R, Tangent.B);
+		}
 	}
 
 	void SetUV2(float u, float v)
@@ -142,14 +152,24 @@ struct LightingVertex
 		}
 	}
 
-	void SetPackedNormal(const VertexColor& normal)
+	void SetPackedNormal(const VertexColor& normal, bool flipRGB)
 	{
 		Normal = normal;
+
+		if (flipRGB)
+		{
+			std::swap(Normal.R, Normal.B);
+		}
 	}
 
-	void SetPackedTangent(const VertexColor& tangent)
+	void SetPackedTangent(const VertexColor& tangent, bool flipRGB)
 	{
 		Tangent = tangent;
+
+		if (flipRGB)
+		{
+			std::swap(Tangent.R, Tangent.B);
+		}
 	}
 
 	void SetUV2(float u, float v)
@@ -188,11 +208,11 @@ struct SimpleVertex
 		}
 	}
 
-	void SetPackedNormal(const VertexColor& normal)
+	void SetPackedNormal(const VertexColor& normal, bool flipRGB)
 	{
 	}
 
-	void SetPackedTangent(const VertexColor& tangent)
+	void SetPackedTangent(const VertexColor& tangent, bool flipRGB)
 	{
 	}
 
@@ -246,14 +266,24 @@ struct AdvancedLightingVertex
 		}
 	}
 
-	void SetPackedNormal(const VertexColor& normal)
+	void SetPackedNormal(const VertexColor& normal, bool flipRGB)
 	{
 		Normal = normal;
+
+		if (flipRGB)
+		{
+			std::swap(Normal.R, Normal.B);
+		}
 	}
 
-	void SetPackedTangent(const VertexColor& tangent)
+	void SetPackedTangent(const VertexColor& tangent, bool flipRGB)
 	{
 		Tangent = tangent;
+
+		if (flipRGB)
+		{
+			std::swap(Tangent.R, Tangent.B);
+		}
 	}
 
 	void SetUV2(float u, float v)
@@ -304,11 +334,11 @@ struct AdvancedSimpleVertex
 		}
 	}
 
-	void SetPackedNormal(const VertexColor& normal)
+	void SetPackedNormal(const VertexColor& normal, bool flipRGB)
 	{
 	}
 
-	void SetPackedTangent(const VertexColor& tangent)
+	void SetPackedTangent(const VertexColor& tangent, bool flipRGB)
 	{
 	}
 
@@ -654,6 +684,33 @@ void ApplyViewOffset(::Effekseer::SIMD::Mat43f& mat,
 void ApplyViewOffset(::Effekseer::SIMD::Mat44f& mat,
 					 const ::Effekseer::SIMD::Mat44f& camera,
 					 float distance);
+
+struct ZFixedTransformBlock
+{
+	Effekseer::SIMD::Float4 m0;
+	Effekseer::SIMD::Float4 m1;
+	Effekseer::SIMD::Float4 center;
+
+	ZFixedTransformBlock(const ::Effekseer::SIMD::Mat43f& mat, float z)
+	{
+		using namespace Effekseer::SIMD;
+
+		m0 = mat.X;
+		m1 = mat.Y;
+		auto m2 = mat.Z;
+		center = Float4::SetZero();
+		Float4::Transpose(m0, m1, m2, center);
+		center = center + m2 * z;
+	}
+
+	void Transform(Effekseer::SIMD::Vec3f& data)
+	{
+		using namespace Effekseer::SIMD;
+
+		Float4 oPos = Float4::MulAddLane<0>(center, m0, data.s);
+		data.s = Float4::MulAddLane<1>(oPos, m1, data.s);
+	}
+};
 
 template <typename Vertex>
 inline void TransformVertexes(Vertex& vertexes, int32_t count, const ::Effekseer::SIMD::Mat43f& mat)
@@ -1427,6 +1484,7 @@ struct PixelConstantBuffer
 	EdgeParameter EdgeParam;
 	SoftParticleParameter SoftParticleParam;
 	float UVInversedBack[4];
+	std::array<float,4> MiscFlags;
 
 	void SetModelFlipbookParameter(float enableInterpolation, float interpolationType)
 	{
