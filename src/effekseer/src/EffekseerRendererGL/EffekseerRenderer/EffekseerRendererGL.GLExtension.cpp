@@ -92,6 +92,8 @@ typedef void(EFK_STDCALL* FP_glDrawElementsInstanced)(GLenum mode,
 typedef void(EFK_STDCALL* FP_glCompressedTexImage2D)(
 	GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLint border, GLsizei imageSize, const void* data);
 
+typedef void(EFK_STDCALL* FP_glGetVertexAttribiv)(GLuint index, GLenum pname, GLint *params);
+
 typedef void(EFK_STDCALL* FP_glGenFramebuffers)(GLsizei n, GLuint* ids);
 
 typedef void(EFK_STDCALL* FP_glBindFramebuffer)(GLenum target, GLuint framebuffer);
@@ -152,6 +154,7 @@ static FP_glUnmapBuffer g_glUnmapBuffer = nullptr;
 static FP_glDrawElementsInstanced g_glDrawElementsInstanced = nullptr;
 
 static FP_glCompressedTexImage2D g_glCompressedTexImage2D = nullptr;
+static FP_glGetVertexAttribiv g_glGetVertexAttribiv = nullptr;
 
 static FP_glGenFramebuffers g_glGenFramebuffers = nullptr;
 
@@ -302,6 +305,7 @@ bool Initialize(OpenGLDeviceType deviceType, bool isExtensionsEnabled)
 	GET_PROC_REQ(glDrawElementsInstanced);
 
 	GET_PROC_REQ(glCompressedTexImage2D);
+	GET_PROC_REQ(glGetVertexAttribiv);
 
 	GET_PROC_REQ(glGenFramebuffers);
 
@@ -895,6 +899,15 @@ void glDrawBuffers(GLsizei n, const GLenum* bufs)
 #elif defined(__EFFEKSEER_RENDERER_GLES2__) || defined(__EFFEKSEER_RENDERER_GL2__)
 #else
 	::glDrawBuffers(n, bufs);
+#endif
+}
+
+void glGetVertexAttribiv(GLuint index, GLenum pname, GLint *params)
+{
+#if _WIN32
+	g_glGetVertexAttribiv(index, pname, params);
+#else
+	::glGetVertexAttribiv(index, pname, params);
 #endif
 }
 

@@ -110,6 +110,7 @@ private:
 	GLuint m_program;
 
 	std::vector<GLint> m_aid;
+	std::vector<bool> m_vertex_enabled;
 	std::vector<Layout> m_layout;
 
 	int32_t m_vertexSize;
