@@ -3,6 +3,7 @@ CC = 'clang++'
 CFLAGS += '-target x86_64-apple-darwin'
 CFLAGS += '-isysroot ' .. sdk
 CFLAGS += '-I/home/marf/cross-mac/usr/include/c++/v1'
+CFLAGS += '-Wno-inconsistent-missing-override'
 LD = 'clang++'
 LDFLAGS += '-B/home/marf/cross-mac/cctools-port/cctools/build/ld64/src/ld'
 LDFLAGS += '-L/home/marf/cross-mac/Cellar/luajit/2.0.5/lib'
