@@ -54,6 +54,18 @@ void lua_prep(const char *funcname)
 
 void *file_read(const char *path, size_t &size)
 {
+	/* Call getInfo first, since wasm will crash if we call read on a
+	 * non-existent file.
+	 */
+	lua_prep("love.filesystem.getInfo");
+	lua_pushstring(L, path);
+	lua_call(L, 1, 2);
+	if(lua_isnil(L, -2)) {
+		lua_remove(L, -2);
+		return NULL;
+	}
+	lua_remove(L, -2);
+
 	lua_prep("love.filesystem.read");
 	lua_pushstring(L, path);
 	lua_call(L, 1, 2);
@@ -72,6 +84,77 @@ void *file_read(const char *path, size_t &size)
 }
 
 static bool g_warn_on_missing_textures = false;
+
+class LoveFileReader : public ::Effekseer::FileReader
+{
+	public:
+		LoveFileReader(const char *path)
+		{
+			mem = file_read(path, size);
+		}
+
+		size_t Read(void *buffer, size_t len)
+		{
+			if(pos >= size)
+				return 0;
+			if(len > size - pos)
+				len = size - pos;
+			memcpy(buffer, (char*)mem + pos, len);
+			pos += len;
+			return len;
+		}
+
+		void Seek(int position)
+		{
+			if(position < 0)
+				pos = 0;
+			else
+				pos = position;
+		}
+
+		int GetPosition()
+		{
+			return pos;
+		}
+
+		size_t GetLength()
+		{
+			return size;
+		}
+
+		bool IsValid()
+		{
+			return mem != NULL;
+		}
+
+	private:
+		void *mem;
+		size_t size;
+		int pos = 0;
+};
+
+class LoveFileInterface : public ::Effekseer::FileInterface
+{
+	public:
+		::Effekseer::FileReader *OpenRead(const char16_t* efkpath)
+		{
+			char path[256];
+			::Effekseer::ConvertUtf16ToUtf8(path, 256, efkpath);
+			LoveFileReader *reader = new LoveFileReader(path);
+			if(reader->IsValid()) {
+				return reader;
+			}
+			return NULL;
+		}
+
+		::Effekseer::FileWriter *OpenWrite(const char16_t* efkpath)
+		{
+			char path[256];
+			::Effekseer::ConvertUtf16ToUtf8(path, 256, efkpath);
+			printf("Fail to open write: %s\n", path);
+			return NULL;
+		}
+};
 
 class LoveTextureLoader : public ::Effekseer::TextureLoader
 {
@@ -139,67 +222,6 @@ public:
 	}
 };
 
-class LoveEffectLoader : public ::Effekseer::EffectLoader
-{
-public:
-	LoveEffectLoader()
-	{
-	}
-
-	~LoveEffectLoader()
-	{
-	}
-
-	bool Load(const EFK_CHAR* efkpath, void*& data, int32_t& size)
-	{
-		data = NULL;
-		size = 0;
-
-		char path[256];
-		::Effekseer::ConvertUtf16ToUtf8(path, 256, efkpath);
-		size_t fdsize = 0;
-		data = file_read(path, fdsize);
-		size = fdsize;
-		return true;
-	}
-
-	void Unload(void* data, int32_t size)
-	{
-		uint8_t* data8 = (uint8_t*)data;
-		ES_SAFE_DELETE_ARRAY(data8);
-	}
-};
-
-class LoveModelLoader : public ::Effekseer::ModelLoader
-{
-public:
-	LoveModelLoader()
-	{
-	}
-
-	~LoveModelLoader()
-	{
-	}
-
-	::Effekseer::ModelRef Load(const EFK_CHAR* efkpath)
-	{
-		void *data = NULL;
-		int32_t size = 0;
-
-		char path[256];
-		::Effekseer::ConvertUtf16ToUtf8(path, 256, efkpath);
-		size_t fdsize = 0;
-		data = file_read(path, fdsize);
-		size = fdsize;
-		auto model = ::Effekseer::MakeRefPtr<::Effekseer::Model>((const uint8_t*)data, size);
-		return model;
-	}
-
-	void Unload(::Effekseer::ModelRef data)
-	{
-	}
-};
-
 EffectManager::EffectManager(bool warn_on_missing_textures)
 {
 	g_warn_on_missing_textures = warn_on_missing_textures;
@@ -209,6 +231,7 @@ EffectManager::EffectManager(bool warn_on_missing_textures)
 	renderer = ::EffekseerRendererGL::Renderer::Create(8000, EffekseerRendererGL::OpenGLDeviceType::OpenGL3);
 #endif
 
+	::Effekseer::FileInterface *fileinterface = new LoveFileInterface();
 	manager = ::Effekseer::Manager::Create(8000);
 
 	manager->SetSpriteRenderer(renderer->CreateSpriteRenderer());
@@ -217,10 +240,10 @@ EffectManager::EffectManager(bool warn_on_missing_textures)
 	manager->SetTrackRenderer(renderer->CreateTrackRenderer());
 	manager->SetModelRenderer(renderer->CreateModelRenderer());
 
-	manager->SetEffectLoader(::Effekseer::EffectLoaderRef(new LoveEffectLoader()));
+	manager->SetEffectLoader(::Effekseer::Effect::CreateEffectLoader(fileinterface));
 	manager->SetTextureLoader(::Effekseer::TextureLoaderRef(new LoveTextureLoader(renderer->GetGraphicsDevice())));
-	manager->SetModelLoader(::Effekseer::ModelLoaderRef(new LoveModelLoader()));
-	manager->SetMaterialLoader(renderer->CreateMaterialLoader());
+	manager->SetModelLoader(renderer->CreateModelLoader(fileinterface));
+	manager->SetMaterialLoader(renderer->CreateMaterialLoader(fileinterface));
  	manager->SetCurveLoader(Effekseer::MakeRefPtr<Effekseer::CurveLoader>());
 
 	updateCounter = 0.0f;
