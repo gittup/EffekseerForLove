@@ -163,6 +163,15 @@ int w_EffectManager_setRotation(lua_State *L)
 	return 0;
 }
 
+int w_EffectManager_setInvert(lua_State *L)
+{
+	EffectManager *manager = *(EffectManager**)luaL_checkudata(L, 1, "EffectManager");
+	luaL_checktype(L, 2, LUA_TBOOLEAN);
+	bool invert = lua_toboolean(L, 2) != 0;
+	LUA_TRYWRAP(manager->setInvert(invert););
+	return 0;
+}
+
 int w_EffectManager_update(lua_State *L)
 {
 	EffectManager *manager = *(EffectManager**)luaL_checkudata(L, 1, "EffectManager");
@@ -190,6 +199,7 @@ const luaL_Reg w_EffectManager_functions[] = {
 	{ "setSpeed", w_EffectManager_setSpeed },
 	{ "setScale", w_EffectManager_setScale },
 	{ "setRotation", w_EffectManager_setRotation },
+	{ "setInvert", w_EffectManager_setInvert },
 	{ "update", w_EffectManager_update },
 	{ "draw", w_EffectManager_draw },
 };

@@ -247,6 +247,15 @@ EffectManager::EffectManager(bool warn_on_missing_textures)
  	manager->SetCurveLoader(Effekseer::MakeRefPtr<Effekseer::CurveLoader>());
 
 	updateCounter = 0.0f;
+
+	/* Default to inverting the y-axis. This can be overridden with
+	 * setInvert(), which is necessary if drawing Effekseer effects to a
+	 * love2d canvas. This is necessary to account for the different
+	 * orthographic projects when drawing to the screen and canvas that
+	 * love uses in
+	 * src/modules/graphics/opengl/Graphics.cpp:setCanvasInternal().
+	 */
+	invert_y = true;
 }
 
 ::Effekseer::ManagerRef EffectManager::getManager()
@@ -290,17 +299,26 @@ void EffectManager::setProjection()
 
 	::Effekseer::Matrix44 proj = ::Effekseer::Matrix44().OrthographicRH((float)windowWidth, (float)windowHeight, -512.0, 512.0);
 
-	// Invert y axis
-	proj.Values[1][1] = -proj.Values[1][1];
-
-	// And move 0, 0 to top-left
 	proj.Values[3][0] = -1;
-	proj.Values[3][1] = 1;
+	if(invert_y) {
+		// Invert y axis
+		proj.Values[1][1] = -proj.Values[1][1];
+
+		// And move 0, 0 to top-left
+		proj.Values[3][1] = 1;
+	} else {
+		proj.Values[3][1] = -1;
+	}
 
 	renderer->SetProjectionMatrix(proj);
 
 	::Effekseer::Matrix44 matrix;
 	renderer->SetCameraMatrix(matrix);
+}
+
+void EffectManager::setInvert(bool invert)
+{
+	invert_y = invert;
 }
 
 void EffectManager::flushStreamDraws()

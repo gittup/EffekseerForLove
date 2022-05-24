@@ -37,6 +37,8 @@ public:
 
 	void setProjection();
 
+	void setInvert(bool);
+
 	void update(float dt);
 
 	void flushStreamDraws();
@@ -48,6 +50,7 @@ private:
 	::Effekseer::ManagerRef manager;
 
 	float updateCounter;
+	bool invert_y;
 };
 
 #endif // LOVE_GRAPHICS_EFFECT_MANAGER_H
