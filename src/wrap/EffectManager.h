@@ -37,6 +37,10 @@ public:
 
 	void setProjection();
 
+	void setPerspective();
+
+	void setOrtho();
+
 	void setInvert(bool);
 
 	void update(float dt);
@@ -51,6 +55,7 @@ private:
 
 	float updateCounter;
 	bool invert_y;
+	bool is_ortho;
 };
 
 #endif // LOVE_GRAPHICS_EFFECT_MANAGER_H

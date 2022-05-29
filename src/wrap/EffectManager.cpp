@@ -256,6 +256,8 @@ EffectManager::EffectManager(bool warn_on_missing_textures)
 	 * src/modules/graphics/opengl/Graphics.cpp:setCanvasInternal().
 	 */
 	invert_y = true;
+
+	is_ortho = true;
 }
 
 ::Effekseer::ManagerRef EffectManager::getManager()
@@ -297,23 +299,38 @@ void EffectManager::setProjection()
 
 	lua_pop(L, 1);
 
-	::Effekseer::Matrix44 proj = ::Effekseer::Matrix44().OrthographicRH((float)windowWidth, (float)windowHeight, -512.0, 512.0);
+	if(is_ortho) {
+		::Effekseer::Matrix44 proj = ::Effekseer::Matrix44().OrthographicRH((float)windowWidth, (float)windowHeight, -512.0, 512.0);
 
-	proj.Values[3][0] = -1;
-	if(invert_y) {
-		// Invert y axis
-		proj.Values[1][1] = -proj.Values[1][1];
+		proj.Values[3][0] = -1;
+		if(invert_y) {
+			// Invert y axis
+			proj.Values[1][1] = -proj.Values[1][1];
 
-		// And move 0, 0 to top-left
-		proj.Values[3][1] = 1;
+			// And move 0, 0 to top-left
+			proj.Values[3][1] = 1;
+		} else {
+			proj.Values[3][1] = -1;
+		}
+
+		renderer->SetProjectionMatrix(proj);
+
+		::Effekseer::Matrix44 matrix;
+		renderer->SetCameraMatrix(matrix);
 	} else {
-		proj.Values[3][1] = -1;
+		renderer->SetProjectionMatrix(::Effekseer::Matrix44().PerspectiveFovRH_OpenGL(90.0f / 180.0f * 3.14f, (float)windowWidth / (float)windowHeight, 1.0f, 500.0f));
+		renderer->SetCameraMatrix(::Effekseer::Matrix44().LookAtRH(::Effekseer::Vector3D(10.0f, 5.0f, 20.0f), ::Effekseer::Vector3D(0.0f, 0.0f, 0.0f), ::Effekseer::Vector3D(0.0f, 1.0f, 0.0f)));
 	}
+}
 
-	renderer->SetProjectionMatrix(proj);
+void EffectManager::setPerspective(void)
+{
+	is_ortho = false;
+}
 
-	::Effekseer::Matrix44 matrix;
-	renderer->SetCameraMatrix(matrix);
+void EffectManager::setOrtho(void)
+{
+	is_ortho = true;
 }
 
 void EffectManager::setInvert(bool invert)

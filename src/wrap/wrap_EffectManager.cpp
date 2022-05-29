@@ -178,6 +178,20 @@ int w_EffectManager_setInvert(lua_State *L)
 	return 0;
 }
 
+int w_EffectManager_setOrtho(lua_State *L)
+{
+	EffectManager *manager = *(EffectManager**)luaL_checkudata(L, 1, "EffectManager");
+	LUA_TRYWRAP(manager->setOrtho(););
+	return 0;
+}
+
+int w_EffectManager_setPerspective(lua_State *L)
+{
+	EffectManager *manager = *(EffectManager**)luaL_checkudata(L, 1, "EffectManager");
+	LUA_TRYWRAP(manager->setPerspective(););
+	return 0;
+}
+
 int w_EffectManager_update(lua_State *L)
 {
 	EffectManager *manager = *(EffectManager**)luaL_checkudata(L, 1, "EffectManager");
@@ -206,6 +220,8 @@ const luaL_Reg w_EffectManager_functions[] = {
 	{ "setScale", w_EffectManager_setScale },
 	{ "setRotation", w_EffectManager_setRotation },
 	{ "setInvert", w_EffectManager_setInvert },
+	{ "setOrtho", w_EffectManager_setOrtho },
+	{ "setPerspective", w_EffectManager_setPerspective },
 	{ "update", w_EffectManager_update },
 	{ "draw", w_EffectManager_draw },
 };
