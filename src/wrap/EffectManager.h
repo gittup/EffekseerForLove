@@ -45,6 +45,8 @@ public:
 
 	float getInvert();
 
+	float getMagnification();
+
 	void update(float dt);
 
 	void flushStreamDraws();

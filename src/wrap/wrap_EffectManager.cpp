@@ -43,9 +43,7 @@ int w_EffectManager_newEffect(lua_State *L)
 	::Effekseer::EffectRef effect = nullptr;
 	std::string filename = luaL_checkstring(L, 2);
 
-	// Default to a 10.0 magnification. This seems to work pretty well for
-	// most effects on 1080p
-	float magnification = luaL_optnumber(L, 3, 10.0);
+	float magnification = luaL_optnumber(L, 3, manager->getMagnification());
 
 	EFK_CHAR filename16[256];
 	::Effekseer::ConvertUtf8ToUtf16(filename16, 256, filename.c_str());

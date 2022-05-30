@@ -347,6 +347,15 @@ float EffectManager::getInvert()
 	return 1.0;
 }
 
+float EffectManager::getMagnification()
+{
+	// Default to a 10.0 magnification in orthographic mode. This seems to
+	// work pretty well for most effects on 1080p
+	if(is_ortho)
+		return 10.0;
+	return 1.0;
+}
+
 void EffectManager::flushStreamDraws()
 {
 	/* Calling setColorMask is a pretty simple way to get LOVE to call
