@@ -326,16 +326,25 @@ void EffectManager::setProjection()
 void EffectManager::setPerspective(void)
 {
 	is_ortho = false;
+	setInvert(false);
 }
 
 void EffectManager::setOrtho(void)
 {
 	is_ortho = true;
+	setInvert(true);
 }
 
 void EffectManager::setInvert(bool invert)
 {
 	invert_y = invert;
+}
+
+float EffectManager::getInvert()
+{
+	if(invert_y)
+		return -1.0;
+	return 1.0;
 }
 
 void EffectManager::flushStreamDraws()

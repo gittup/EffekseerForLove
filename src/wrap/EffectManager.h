@@ -43,6 +43,8 @@ public:
 
 	void setInvert(bool);
 
+	float getInvert();
+
 	void update(float dt);
 
 	void flushStreamDraws();

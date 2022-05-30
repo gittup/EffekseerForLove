@@ -68,16 +68,10 @@ int w_EffectManager_play(lua_State *L)
 	float x = luaL_optnumber(L, 3, 0.0);
 	float y = luaL_optnumber(L, 4, 0.0);
 	float z = luaL_optnumber(L, 5, 0.0);
-	bool invert = true;
-	if(lua_isboolean(L, 6) == 1) {
-		invert = lua_toboolean(L, 6) == 1 ? true : false;
-	}
 	::Effekseer::Handle handle = 0;
 	LUA_TRYWRAP(handle = manager->getManager()->Play(effect, ::Effekseer::Vector3D(x, y, z)););
-	if(invert) {
-		// Invert y axis so coordinates match love's
-		manager->getManager()->SetScale(handle, 1.0, -1.0, 1.0);
-	}
+	// Invert y axis so coordinates match love's if inverting is set.
+	manager->getManager()->SetScale(handle, 1.0, 1.0 * manager->getInvert(), 1.0);
 	lua_pushinteger(L, handle);
 	return 1;
 }
@@ -151,10 +145,9 @@ int w_EffectManager_setScale(lua_State *L)
 	EffectManager *manager = *(EffectManager**)luaL_checkudata(L, 1, "EffectManager");
 	::Effekseer::Handle handle = luaL_checkinteger(L, 2);
 	float x = luaL_checknumber(L, 3);
-	float y = luaL_optnumber(L, 4, x);
+	float y = luaL_optnumber(L, 4, x) * manager->getInvert();
 	float z = luaL_optnumber(L, 5, x);
-	// Invert y axis so coordinates match love's
-	LUA_TRYWRAP(manager->getManager()->SetScale(handle, x, -y, z););
+	LUA_TRYWRAP(manager->getManager()->SetScale(handle, x, y, z););
 	return 0;
 }
 
