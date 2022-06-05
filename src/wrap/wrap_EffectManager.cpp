@@ -44,6 +44,7 @@ int w_EffectManager_newEffect(lua_State *L)
 	std::string filename = luaL_checkstring(L, 2);
 
 	float magnification = luaL_optnumber(L, 3, manager->getMagnification());
+	const char *model_filename = luaL_optstring(L, 4, NULL);
 
 	EFK_CHAR filename16[256];
 	::Effekseer::ConvertUtf8ToUtf16(filename16, 256, filename.c_str());
@@ -51,6 +52,16 @@ int w_EffectManager_newEffect(lua_State *L)
 	if(effect == NULL) {
 		luaL_error(L, "Failed to load effect (make sure it is a valid .efk file): %s", filename.c_str());
 	}
+
+	// If we have a custom model, set it to index 0.
+	if(model_filename) {
+		EFK_CHAR filename16[256];
+		::Effekseer::ConvertUtf8ToUtf16(filename16, 256, model_filename);
+
+		::Effekseer::ModelRef model = manager->getManager()->GetModelLoader()->Load(filename16);
+		effect->SetModel(0, model);
+	}
+
 	void *mem = lua_newuserdata(L, sizeof(::Effekseer::EffectRef));
 	::Effekseer::EffectRef *dat = new(mem) ::Effekseer::EffectRef();
 	*dat = effect;
