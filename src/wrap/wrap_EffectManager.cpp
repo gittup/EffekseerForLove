@@ -129,6 +129,19 @@ int w_EffectManager_setTargetLocation(lua_State *L)
 	return 0;
 }
 
+int w_EffectManager_setColor(lua_State *L)
+{
+	EffectManager *manager = *(EffectManager**)luaL_checkudata(L, 1, "EffectManager");
+	::Effekseer::Handle handle = luaL_checkinteger(L, 2);
+	int r = luaL_checkint(L, 3);
+	int g = luaL_checkint(L, 4);
+	int b = luaL_checkint(L, 5);
+	int a = luaL_optint(L, 6, 255);
+	::Effekseer::Color color = ::Effekseer::Color(r, g, b, a);
+	LUA_TRYWRAP(manager->getManager()->SetAllColor(handle, color););
+	return 0;
+}
+
 int w_EffectManager_setSpeed(lua_State *L)
 {
 	EffectManager *manager = *(EffectManager**)luaL_checkudata(L, 1, "EffectManager");
@@ -207,6 +220,7 @@ const luaL_Reg w_EffectManager_functions[] = {
 	{ "exists", w_EffectManager_exists },
 	{ "setLocation", w_EffectManager_setLocation },
 	{ "setTargetLocation", w_EffectManager_setTargetLocation },
+	{ "setColor", w_EffectManager_setColor },
 	{ "setSpeed", w_EffectManager_setSpeed },
 	{ "setScale", w_EffectManager_setScale },
 	{ "setRotation", w_EffectManager_setRotation },
