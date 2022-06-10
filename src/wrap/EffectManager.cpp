@@ -246,8 +246,6 @@ EffectManager::EffectManager(bool warn_on_missing_textures)
 	manager->SetMaterialLoader(renderer->CreateMaterialLoader(fileinterface));
  	manager->SetCurveLoader(Effekseer::MakeRefPtr<Effekseer::CurveLoader>());
 
-	updateCounter = 0.0f;
-
 	/* Default to inverting the y-axis. This can be overridden with
 	 * setInvert(), which is necessary if drawing Effekseer effects to a
 	 * love2d canvas. This is necessary to account for the different
@@ -272,14 +270,8 @@ EffectManager::EffectManager(bool warn_on_missing_textures)
 
 void EffectManager::update(float dt)
 {
-	/* Effekseer's manager update is in frames, which is 60fps. Only call
-	 * Update once our internal counter is larger than one frame.
-	 */
-	updateCounter += dt * 60.0;
-	if(updateCounter >= 1.0f) {
-		manager->Update(updateCounter);
-		updateCounter = 0.0f;
-	}
+	/* Effekseer's manager update is in frames, which is 60fps. */
+	manager->Update(dt * 60.0);
 }
 
 void EffectManager::setProjection()

@@ -57,7 +57,6 @@ private:
 	::EffekseerRendererGL::RendererRef renderer;
 	::Effekseer::ManagerRef manager;
 
-	float updateCounter;
 	bool invert_y;
 	bool is_ortho;
 };
