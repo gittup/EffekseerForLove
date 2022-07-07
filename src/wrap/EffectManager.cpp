@@ -225,11 +225,20 @@ public:
 EffectManager::EffectManager(bool warn_on_missing_textures)
 {
 	g_warn_on_missing_textures = warn_on_missing_textures;
+	EffekseerRendererGL::OpenGLDeviceType gltype;
+
 #ifdef EMSCRIPTEN
-	renderer = ::EffekseerRendererGL::Renderer::Create(8000, EffekseerRendererGL::OpenGLDeviceType::OpenGLES2);
+	gltype = EffekseerRendererGL::OpenGLDeviceType::OpenGLES2;
 #else
-	renderer = ::EffekseerRendererGL::Renderer::Create(8000, EffekseerRendererGL::OpenGLDeviceType::OpenGL3);
+	char *use_opengles = getenv("LOVE_GRAPHICS_USE_OPENGLES");
+	if(use_opengles && strcmp(use_opengles, "1") == 0) {
+		gltype = EffekseerRendererGL::OpenGLDeviceType::OpenGLES2;
+	} else {
+		gltype = EffekseerRendererGL::OpenGLDeviceType::OpenGL3;
+	}
 #endif
+
+	renderer = ::EffekseerRendererGL::Renderer::Create(8000, gltype);
 
 	::Effekseer::FileInterface *fileinterface = new LoveFileInterface();
 	manager = ::Effekseer::Manager::Create(8000);
