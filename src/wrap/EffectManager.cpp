@@ -196,6 +196,35 @@ public:
 		height = lua_tonumber(L, -1);
 		lua_pop(L, 1);
 
+		/* Make sure we have an rgba8 image, or convert it to one. */
+		const char *format;
+		lua_getfield(L, -1, "getFormat");
+		lua_pushvalue(L, -2);
+		lua_call(L, 1, 1);
+		format = (const char*)lua_tostring(L, -1);
+		lua_pop(L, 1);
+		if(strcmp(format, "rgba8") != 0) {
+			/* For non-rgba8 formats, make a new rgba8 ImageData
+			 * and paste the original into it.
+			 */
+			lua_prep("love.image.newImageData");
+			lua_pushnumber(L, width);
+			lua_pushnumber(L, height);
+			lua_pushstring(L, "rgba8");
+			lua_call(L, 3, 1);
+			lua_getfield(L, -1, "paste");
+			lua_pushvalue(L, -2); /* The new rgba8 ImageData */
+			lua_pushvalue(L, -4); /* The original ImageData above */
+			lua_pushnumber(L, 0); /* dx */
+			lua_pushnumber(L, 0); /* dy */
+			lua_pushnumber(L, 0); /* sx */
+			lua_pushnumber(L, 0); /* sy */
+			lua_pushnumber(L, width); /* sw */
+			lua_pushnumber(L, height); /* sh */
+			lua_call(L, 8, 0);
+			lua_remove(L, -2); /* Remove the original ImageData */
+		}
+
 		const char *data;
 		lua_getfield(L, -1, "getPointer");
 		lua_pushvalue(L, -2);
