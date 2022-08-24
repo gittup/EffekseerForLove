@@ -12,4 +12,5 @@ LDFLAGS += '-isysroot ' .. sdk
 LDFLAGS += '-lluajit-5.1'
 LDFLAGS += '-framework OpenGL'
 LDFLAGS += '-shared'
+LDFLAGS += '-stdlib=libc++'
 LDEXT = 'so'
