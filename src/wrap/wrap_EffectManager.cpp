@@ -75,12 +75,11 @@ int w_EffectManager_play(lua_State *L)
 	EffectManager *manager = *(EffectManager**)luaL_checkudata(L, 1, "EffectManager");
 	::Effekseer::EffectRef effect = *(::Effekseer::EffectRef*)luaL_checkudata(L, 2, "Effect");
 	float x = luaL_optnumber(L, 3, 0.0);
-	float y = luaL_optnumber(L, 4, 0.0);
+	float y = manager->adjustY(luaL_optnumber(L, 4, 0.0));
 	float z = luaL_optnumber(L, 5, 0.0);
 	::Effekseer::Handle handle = 0;
 	LUA_TRYWRAP(handle = manager->getManager()->Play(effect, ::Effekseer::Vector3D(x, y, z)););
-	// Invert y axis so coordinates match love's if inverting is set.
-	manager->getManager()->SetScale(handle, 1.0, 1.0 * manager->getInvert(), 1.0);
+	manager->getManager()->SetScale(handle, 1.0, 1.0, 1.0);
 	lua_pushinteger(L, handle);
 	return 1;
 }
@@ -123,7 +122,7 @@ int w_EffectManager_setLocation(lua_State *L)
 	EffectManager *manager = *(EffectManager**)luaL_checkudata(L, 1, "EffectManager");
 	::Effekseer::Handle handle = luaL_checkinteger(L, 2);
 	float x = luaL_checknumber(L, 3);
-	float y = luaL_checknumber(L, 4);
+	float y = manager->adjustY(luaL_checknumber(L, 4));
 	float z = luaL_optnumber(L, 5, 0.0);
 	LUA_TRYWRAP(manager->getManager()->SetLocation(handle, x, y, z););
 	return 0;
@@ -134,7 +133,7 @@ int w_EffectManager_setTargetLocation(lua_State *L)
 	EffectManager *manager = *(EffectManager**)luaL_checkudata(L, 1, "EffectManager");
 	::Effekseer::Handle handle = luaL_checkinteger(L, 2);
 	float x = luaL_checknumber(L, 3);
-	float y = luaL_checknumber(L, 4);
+	float y = manager->adjustY(luaL_checknumber(L, 4));
 	float z = luaL_optnumber(L, 5, 0.0);
 	LUA_TRYWRAP(manager->getManager()->SetTargetLocation(handle, x, y, z););
 	return 0;
@@ -167,7 +166,7 @@ int w_EffectManager_setScale(lua_State *L)
 	EffectManager *manager = *(EffectManager**)luaL_checkudata(L, 1, "EffectManager");
 	::Effekseer::Handle handle = luaL_checkinteger(L, 2);
 	float x = luaL_checknumber(L, 3);
-	float y = luaL_optnumber(L, 4, x) * manager->getInvert();
+	float y = luaL_optnumber(L, 4, x);
 	float z = luaL_optnumber(L, 5, x);
 	LUA_TRYWRAP(manager->getManager()->SetScale(handle, x, y, z););
 	return 0;

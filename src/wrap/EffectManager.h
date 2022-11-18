@@ -43,9 +43,9 @@ public:
 
 	void setInvert(bool);
 
-	float getInvert();
-
 	float getMagnification();
+
+	float adjustY(float y);
 
 	void update(float dt);
 

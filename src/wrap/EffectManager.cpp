@@ -284,14 +284,18 @@ EffectManager::EffectManager(bool warn_on_missing_textures)
 	manager->SetMaterialLoader(renderer->CreateMaterialLoader(fileinterface));
  	manager->SetCurveLoader(Effekseer::MakeRefPtr<Effekseer::CurveLoader>());
 
-	/* Default to inverting the y-axis. This can be overridden with
+	/* By default we don't invert the y-axis. This can be overridden with
 	 * setInvert(), which is necessary if drawing Effekseer effects to a
 	 * love2d canvas. This is necessary to account for the different
 	 * orthographic projects when drawing to the screen and canvas that
 	 * love uses in
 	 * src/modules/graphics/opengl/Graphics.cpp:setCanvasInternal().
+	 *
+	 * Note that converting the y-axis for the orthographic projection is
+	 * done with the adjustY() function, rather than inverting the axis
+	 * outright.
 	 */
-	invert_y = true;
+	invert_y = false;
 
 	is_ortho = true;
 }
@@ -356,25 +360,16 @@ void EffectManager::setProjection()
 void EffectManager::setPerspective(void)
 {
 	is_ortho = false;
-	setInvert(false);
 }
 
 void EffectManager::setOrtho(void)
 {
 	is_ortho = true;
-	setInvert(true);
 }
 
 void EffectManager::setInvert(bool invert)
 {
 	invert_y = invert;
-}
-
-float EffectManager::getInvert()
-{
-	if(invert_y)
-		return -1.0;
-	return 1.0;
 }
 
 float EffectManager::getMagnification()
@@ -384,6 +379,22 @@ float EffectManager::getMagnification()
 	if(is_ortho)
 		return 10.0;
 	return 1.0;
+}
+
+float EffectManager::adjustY(float y)
+{
+	// For an orthographic projection, convert the Y coordinate to love2d's
+	// space (with 0, 0 at at the topleft).
+	if(is_ortho) {
+		lua_prep("love.graphics");
+		lua_getfield(L, -1, "getHeight");
+		lua_call(L, 0, 1);
+		float windowHeight = lua_tonumber(L, -1);
+		lua_pop(L, 1);
+		lua_pop(L, 1);
+		return windowHeight - y;
+	}
+	return y;
 }
 
 void EffectManager::flushStreamDraws()
