@@ -433,7 +433,7 @@ void EffectManager::draw()
 	glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &num);
 	for(size_t i=0; i<num; i++) {
 		GLint enabled;
-		GLExt::glGetVertexAttribiv(i, GL_VERTEX_ATTRIB_ARRAY_ENABLED, &enabled);
+		::glGetVertexAttribiv(i, GL_VERTEX_ATTRIB_ARRAY_ENABLED, &enabled);
 		GLExt::glDisableVertexAttribArray(i);
 		vertex_enabled.push_back(enabled);
 	}
