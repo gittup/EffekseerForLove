@@ -104,7 +104,7 @@ class EffectImplemented : public Effect, public ReferenceObject
 	friend class EffectFactory;
 	friend class Instance;
 
-	static const int32_t SupportBinaryVersion = Version16;
+	static const int32_t SupportBinaryVersion = Version17;
 
 protected:
 	SettingRef m_setting;
@@ -182,6 +182,13 @@ protected:
 
 	} Culling;
 
+	struct
+	{
+		float distance1;
+		float distance2;
+		float distance3;
+	} LODs;
+
 	//! a flag to reload
 	bool isReloadingOnRenderingThread = false;
 
@@ -226,6 +233,11 @@ public:
 	void SetLoadingParameter(ReferenceObject* obj);
 
 	std::vector<InternalScript>& GetDynamicEquation()
+	{
+		return dynamicEquation;
+	}
+
+	const std::vector<InternalScript>& GetDynamicEquation() const
 	{
 		return dynamicEquation;
 	}

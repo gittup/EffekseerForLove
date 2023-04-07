@@ -14,44 +14,24 @@
 namespace Effekseer
 {
 
-struct ProceduralMeshVertex
+ProceduralMesh ProceduralMesh::Combine(ProceduralMesh mesh1, ProceduralMesh mesh2)
 {
-	SIMD::Vec3f Position;
-	SIMD::Vec3f Normal;
-	SIMD::Vec3f Tangent;
-	SIMD::Vec2f UV;
-	Color VColor;
-};
+	const auto vertexOffset = mesh1.Vertexes.size();
+	const auto faceOffset = mesh1.Faces.size();
 
-struct ProceduralMeshFace
-{
-	std::array<int32_t, 3> Indexes;
-};
+	std::copy(mesh2.Vertexes.begin(), mesh2.Vertexes.end(), std::back_inserter(mesh1.Vertexes));
+	std::copy(mesh2.Faces.begin(), mesh2.Faces.end(), std::back_inserter(mesh1.Faces));
 
-struct ProceduralMesh
-{
-	CustomAlignedVector<ProceduralMeshVertex> Vertexes;
-	CustomVector<ProceduralMeshFace> Faces;
-
-	static ProceduralMesh Combine(ProceduralMesh mesh1, ProceduralMesh mesh2)
+	for (size_t f = faceOffset; f < mesh1.Faces.size(); f++)
 	{
-		const auto vertexOffset = mesh1.Vertexes.size();
-		const auto faceOffset = mesh1.Faces.size();
-
-		std::copy(mesh2.Vertexes.begin(), mesh2.Vertexes.end(), std::back_inserter(mesh1.Vertexes));
-		std::copy(mesh2.Faces.begin(), mesh2.Faces.end(), std::back_inserter(mesh1.Faces));
-
-		for (size_t f = faceOffset; f < mesh1.Faces.size(); f++)
+		for (auto& ind : mesh1.Faces[f].Indexes)
 		{
-			for (auto& ind : mesh1.Faces[f].Indexes)
-			{
-				ind += static_cast<int32_t>(vertexOffset);
-			}
+			ind += static_cast<int32_t>(vertexOffset);
 		}
-
-		return std::move(mesh1);
 	}
-};
+
+	return mesh1;
+}
 
 static float CalcSineWave(float x, float frequency, float offset, float power)
 {
@@ -97,10 +77,10 @@ static void CalcTangentSpace(const ProceduralMeshVertex& v1, const ProceduralMes
 	}
 
 	tangent = SIMD::Vec3f(u[0], u[1], u[2]);
-	tangent.Normalize();
+	tangent = tangent.Normalize();
 
 	binormal = SIMD::Vec3f(v[0], v[1], v[2]);
-	binormal.Normalize();
+	binormal = binormal.Normalize();
 }
 
 static void CalculateNormal(ProceduralMesh& mesh)
@@ -144,7 +124,8 @@ static void CalculateNormal(ProceduralMesh& mesh)
 	CustomAlignedUnorderedMap<SIMD::Vec3f, SIMD::Vec3f> tangents;
 	CustomAlignedUnorderedMap<SIMD::Vec3f, int32_t> vertexCounts;
 
-	auto generateKey = [](SIMD::Vec3f s) -> SIMD::Vec3f {
+	auto generateKey = [](SIMD::Vec3f s) -> SIMD::Vec3f
+	{
 		return SIMD::Vec3f{
 			roundf(s.GetX() * 1024.0f),
 			roundf(s.GetY() * 1024.0f),
@@ -199,7 +180,8 @@ static void CalculateVertexColor(ProceduralMesh& mesh,
 								 const std::array<float, 2>& colorCenterPosition,
 								 const std::array<float, 2>& colorCenterArea)
 {
-	auto calcColor = [&](float u, float v) -> Color {
+	auto calcColor = [&](float u, float v) -> Color
+	{
 		::Effekseer::Color leftColor;
 		::Effekseer::Color centerColor;
 		::Effekseer::Color rightColor;
@@ -282,7 +264,8 @@ static void ChangeAxis(ProceduralMesh& mesh, ProceduralModelAxisType axisType)
 
 	if (axisType == ProceduralModelAxisType::X)
 	{
-		const auto swapAxis = [](SIMD::Vec3f& v) -> void {
+		const auto swapAxis = [](SIMD::Vec3f& v) -> void
+		{
 			auto x = v.GetX();
 			auto y = v.GetY();
 			v.SetY(x);
@@ -303,7 +286,8 @@ static void ChangeAxis(ProceduralMesh& mesh, ProceduralModelAxisType axisType)
 	}
 	else if (axisType == ProceduralModelAxisType::Z)
 	{
-		const auto swapAxis = [](SIMD::Vec3f& v) -> void {
+		const auto swapAxis = [](SIMD::Vec3f& v) -> void
+		{
 			auto z = v.GetZ();
 			auto y = v.GetY();
 			v.SetY(z);
@@ -324,7 +308,7 @@ static void ChangeAxis(ProceduralMesh& mesh, ProceduralModelAxisType axisType)
 	}
 }
 
-static ModelRef ConvertMeshToModel(const ProceduralMesh& mesh)
+ModelRef ProceduralModelGenerator::ConvertMeshToModel(const ProceduralMesh& mesh)
 {
 	CustomVector<Model::Vertex> vs;
 	CustomVector<Model::Face> faces;
@@ -350,6 +334,11 @@ static ModelRef ConvertMeshToModel(const ProceduralMesh& mesh)
 		faces[i].Indexes[2] = mesh.Faces[i].Indexes[2];
 	}
 
+	return CreateModel(vs, faces);
+}
+
+ModelRef ProceduralModelGenerator::CreateModel(const CustomVector<Model::Vertex>& vs, const CustomVector<Model::Face>& faces)
+{
 	return ::Effekseer::MakeRefPtr<Model>(vs, faces);
 }
 
@@ -495,7 +484,7 @@ struct RotatorMeshGenerator
 		float c;
 		SinCos(angle, s, c);
 		auto x = pos2d.GetX();
-		//x += sin(depthValue) * 0.4f;
+		// x += sin(depthValue) * 0.4f;
 		auto rx = x * s;
 		auto rz = x * c;
 		auto y = pos2d.GetY();
@@ -766,7 +755,7 @@ struct RotatedWireMeshGenerator
 			ret = ProceduralMesh::Combine(std::move(ret), std::move(ribbon));
 		}
 
-		return std::move(ret);
+		return ret;
 	}
 };
 
@@ -784,7 +773,8 @@ ModelRef ProceduralModelGenerator::Generate(const ProceduralModelParameter& para
 		rotator.DepthMax = parameter.Sphere.DepthMax;
 		rotator.Radius = parameter.Sphere.Radius;
 
-		primitiveGenerator = [rotator](float value) -> SIMD::Vec2f {
+		primitiveGenerator = [rotator](float value) -> SIMD::Vec2f
+		{
 			return rotator.GetPosition(value);
 		};
 	}
@@ -794,7 +784,8 @@ ModelRef ProceduralModelGenerator::Generate(const ProceduralModelParameter& para
 		rotator.Radius = parameter.Cone.Radius;
 		rotator.Depth = parameter.Cone.Depth;
 
-		primitiveGenerator = [rotator](float value) -> SIMD::Vec2f {
+		primitiveGenerator = [rotator](float value) -> SIMD::Vec2f
+		{
 			return rotator.GetPosition(value);
 		};
 	}
@@ -805,7 +796,8 @@ ModelRef ProceduralModelGenerator::Generate(const ProceduralModelParameter& para
 		rotator.Radius2 = parameter.Cylinder.Radius2;
 		rotator.Depth = parameter.Cylinder.Depth;
 
-		primitiveGenerator = [rotator](float value) -> SIMD::Vec2f {
+		primitiveGenerator = [rotator](float value) -> SIMD::Vec2f
+		{
 			return rotator.GetPosition(value);
 		};
 	}
@@ -818,7 +810,8 @@ ModelRef ProceduralModelGenerator::Generate(const ProceduralModelParameter& para
 		rotator.Point4 = parameter.Spline4.Point4;
 		rotator.Calculate();
 
-		primitiveGenerator = [rotator](float value) -> SIMD::Vec2f {
+		primitiveGenerator = [rotator](float value) -> SIMD::Vec2f
+		{
 			return rotator.GetPosition(value);
 		};
 	}
@@ -827,7 +820,8 @@ ModelRef ProceduralModelGenerator::Generate(const ProceduralModelParameter& para
 		assert(0);
 	}
 
-	std::function<SIMD::Vec3f(SIMD::Vec3f)> noiseFunc = [parameter, &curlNoise](SIMD::Vec3f v) -> SIMD::Vec3f {
+	std::function<SIMD::Vec3f(SIMD::Vec3f)> noiseFunc = [parameter, &curlNoise](SIMD::Vec3f v) -> SIMD::Vec3f
+	{
 		// tilt noise
 		{
 			float angleX = CalcSineWave(v.GetY(), parameter.TiltNoiseFrequency[0], parameter.TiltNoiseOffset[0], parameter.TiltNoisePower[0]);

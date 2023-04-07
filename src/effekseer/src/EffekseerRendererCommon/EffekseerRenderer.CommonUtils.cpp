@@ -5,6 +5,81 @@
 namespace EffekseerRenderer
 {
 
+std::array<std::array<float, 4>, 13> ToUniform(const Effekseer::Gradient& gradient)
+{
+	std::array<std::array<float, 4>, 13> ret;
+	ret[0][0] = gradient.ColorCount;
+	ret[0][1] = gradient.AlphaCount;
+	ret[0][2] = 0.0F;
+	ret[0][3] = 0.0F;
+
+	const auto getColorKey = [](const Effekseer::Gradient& gradient, size_t index)
+	{
+		if (gradient.ColorCount == 0)
+		{
+			Effekseer::Gradient::ColorKey key;
+			key.Color = {1.0f, 1.0f, 1.0f};
+			key.Intensity = 1.0f;
+			key.Position = 0.0;
+			return key;
+		}
+		else
+		{
+			if (gradient.ColorCount <= index)
+			{
+				auto key = gradient.Colors[gradient.ColorCount - 1];
+				key.Position += index;
+				return key;
+			}
+
+			return gradient.Colors[index];
+		}
+	};
+
+	const auto getAlphaKey = [](const Effekseer::Gradient& gradient, size_t index)
+	{
+		if (gradient.AlphaCount == 0)
+		{
+			Effekseer::Gradient::AlphaKey key;
+			key.Alpha = 1.0f;
+			key.Position = 0.0;
+			return key;
+		}
+		else
+		{
+			if (gradient.AlphaCount <= index)
+			{
+				auto key = gradient.Alphas[gradient.AlphaCount - 1];
+				key.Position += index;
+				return key;
+			}
+
+			return gradient.Alphas[index];
+		}
+	};
+
+	for (size_t i = 0; i < gradient.Colors.size(); i++)
+	{
+		const auto colorKey = getColorKey(gradient, i);
+		ret[1 + i][0] = colorKey.Color[0] * colorKey.Intensity;
+		ret[1 + i][1] = colorKey.Color[1] * colorKey.Intensity;
+		ret[1 + i][2] = colorKey.Color[2] * colorKey.Intensity;
+		ret[1 + i][3] = colorKey.Position;
+	}
+
+	for (size_t i = 0; i < 4; i++)
+	{
+		const auto alphaKey0 = getAlphaKey(gradient, i * 2 + 0);
+		const auto alphaKey1 = getAlphaKey(gradient, i * 2 + 1);
+		ret[9 + i][0] = alphaKey0.Alpha;
+		ret[9 + i][1] = alphaKey0.Position;
+		ret[9 + i][2] = alphaKey1.Alpha;
+		ret[9 + i][3] = alphaKey1.Position;
+	}
+
+	return ret;
+}
+
 void CalcBillboard(::Effekseer::BillboardType billboardType,
 				   Effekseer::SIMD::Mat43f& dst,
 				   ::Effekseer::SIMD::Vec3f& s,
@@ -403,7 +478,8 @@ void CalculateAlignedTextureInformation(Effekseer::Backend::TextureFormatType fo
 	height = 0;
 
 	const int32_t blockSize = 4;
-	auto aligned = [](int32_t size, int32_t alignement) -> int32_t {
+	auto aligned = [](int32_t size, int32_t alignement) -> int32_t
+	{
 		return ((size + alignement - 1) / alignement) * alignement;
 	};
 
@@ -467,6 +543,70 @@ void CalculateAlignedTextureInformation(Effekseer::Backend::TextureFormatType fo
 		sizePerWidth = 16 * aligned(size[0], blockSize) / blockSize;
 		height = aligned(size[1], blockSize) / blockSize;
 	}
+}
+
+Effekseer::Backend::VertexLayoutRef GetVertexLayout(Effekseer::Backend::GraphicsDeviceRef graphicsDevice, RendererShaderType type)
+{
+	if (type == RendererShaderType::Unlit)
+	{
+		const Effekseer::Backend::VertexLayoutElement vlElemSprite[3] = {
+			{Effekseer::Backend::VertexLayoutFormat::R32G32B32_FLOAT, "Input_Pos", "POSITION", 0},
+			{Effekseer::Backend::VertexLayoutFormat::R8G8B8A8_UNORM, "Input_Color", "NORMAL", 0},
+			{Effekseer::Backend::VertexLayoutFormat::R32G32_FLOAT, "Input_UV", "TEXCOORD", 0},
+		};
+
+		return graphicsDevice->CreateVertexLayout(vlElemSprite, 3);
+	}
+	else if (type == RendererShaderType::AdvancedUnlit)
+	{
+		const Effekseer::Backend::VertexLayoutElement vlElemUnlitAd[8] = {
+			{Effekseer::Backend::VertexLayoutFormat::R32G32B32_FLOAT, "Input_Pos", "POSITION", 0},
+			{Effekseer::Backend::VertexLayoutFormat::R8G8B8A8_UNORM, "Input_Color", "NORMAL", 0},
+			{Effekseer::Backend::VertexLayoutFormat::R32G32_FLOAT, "Input_UV", "TEXCOORD", 0},
+			{Effekseer::Backend::VertexLayoutFormat::R32G32B32A32_FLOAT, "Input_Alpha_Dist_UV", "TEXCOORD", 1},
+			{Effekseer::Backend::VertexLayoutFormat::R32G32_FLOAT, "Input_BlendUV", "TEXCOORD", 2},
+			{Effekseer::Backend::VertexLayoutFormat::R32G32B32A32_FLOAT, "Input_Blend_Alpha_Dist_UV", "TEXCOORD", 3},
+			{Effekseer::Backend::VertexLayoutFormat::R32_FLOAT, "Input_FlipbookIndex", "TEXCOORD", 4},
+			{Effekseer::Backend::VertexLayoutFormat::R32_FLOAT, "Input_AlphaThreshold", "TEXCOORD", 5},
+		};
+
+		return graphicsDevice->CreateVertexLayout(vlElemUnlitAd, 8);
+	}
+	else if (type == RendererShaderType::Lit || type == RendererShaderType::BackDistortion)
+	{
+		const Effekseer::Backend::VertexLayoutElement vlElemLit[6] = {
+			{Effekseer::Backend::VertexLayoutFormat::R32G32B32_FLOAT, "Input_Pos", "POSITION", 0},
+			{Effekseer::Backend::VertexLayoutFormat::R8G8B8A8_UNORM, "Input_Color", "NORMAL", 0},
+			{Effekseer::Backend::VertexLayoutFormat::R8G8B8A8_UNORM, "Input_Normal", "NORMAL", 1},
+			{Effekseer::Backend::VertexLayoutFormat::R8G8B8A8_UNORM, "Input_Tangent", "NORMAL", 2},
+			{Effekseer::Backend::VertexLayoutFormat::R32G32_FLOAT, "Input_UV1", "TEXCOORD", 0},
+			{Effekseer::Backend::VertexLayoutFormat::R32G32_FLOAT, "Input_UV2", "TEXCOORD", 1},
+		};
+
+		return graphicsDevice->CreateVertexLayout(vlElemLit, 6);
+	}
+	else if (type == RendererShaderType::AdvancedLit || type == RendererShaderType::AdvancedBackDistortion)
+	{
+		const Effekseer::Backend::VertexLayoutElement vlElemLitAd[11] = {
+			{Effekseer::Backend::VertexLayoutFormat::R32G32B32_FLOAT, "Input_Pos", "POSITION", 0},
+			{Effekseer::Backend::VertexLayoutFormat::R8G8B8A8_UNORM, "Input_Color", "NORMAL", 0},
+			{Effekseer::Backend::VertexLayoutFormat::R8G8B8A8_UNORM, "Input_Normal", "NORMAL", 1},
+			{Effekseer::Backend::VertexLayoutFormat::R8G8B8A8_UNORM, "Input_Tangent", "NORMAL", 2},
+			{Effekseer::Backend::VertexLayoutFormat::R32G32_FLOAT, "Input_UV1", "TEXCOORD", 0},
+			{Effekseer::Backend::VertexLayoutFormat::R32G32_FLOAT, "Input_UV2", "TEXCOORD", 1},
+			{Effekseer::Backend::VertexLayoutFormat::R32G32B32A32_FLOAT, "Input_Alpha_Dist_UV", "TEXCOORD", 2},
+			{Effekseer::Backend::VertexLayoutFormat::R32G32_FLOAT, "Input_BlendUV", "TEXCOORD", 3},
+			{Effekseer::Backend::VertexLayoutFormat::R32G32B32A32_FLOAT, "Input_Blend_Alpha_Dist_UV", "TEXCOORD", 4},
+			{Effekseer::Backend::VertexLayoutFormat::R32_FLOAT, "Input_FlipbookIndex", "TEXCOORD", 5},
+			{Effekseer::Backend::VertexLayoutFormat::R32_FLOAT, "Input_AlphaThreshold", "TEXCOORD", 6},
+		};
+
+		return graphicsDevice->CreateVertexLayout(vlElemLitAd, 11);
+	}
+
+	assert(0);
+
+	return {};
 }
 
 } // namespace EffekseerRenderer

@@ -2,8 +2,8 @@
 #ifndef __EFFEKSEERRENDERER_COMMON_UTILS_H__
 #define __EFFEKSEERRENDERER_COMMON_UTILS_H__
 
-#include "../EffekseerRendererCommon/EffekseerRenderer.Renderer.h"
-#include "../EffekseerRendererCommon/EffekseerRenderer.Renderer_Impl.h"
+#include "EffekseerRenderer.Renderer.h"
+#include "EffekseerRenderer.Renderer_Impl.h"
 #include <Effekseer.h>
 #include <Effekseer/Material/Effekseer.CompiledMaterial.h>
 #include <Effekseer/Model/SplineGenerator.h>
@@ -642,6 +642,8 @@ struct StrideView
 	}
 };
 
+std::array<std::array<float, 4>, 13> ToUniform(const Effekseer::Gradient& gradient);
+
 void CalcBillboard(::Effekseer::BillboardType billboardType,
 				   Effekseer::SIMD::Mat43f& dst,
 				   ::Effekseer::SIMD::Vec3f& s,
@@ -833,6 +835,9 @@ struct MaterialShaderParameterGenerator
 			VertexUserUniformOffset = vsOffset;
 			vsOffset += sizeof(float) * 4 * materialFile.GetUniformCount();
 
+			// TODO : remove magic number
+			vsOffset += sizeof(float) * 4 * 13 * materialFile.Gradients.size();
+
 			VertexShaderUniformBufferSize = vsOffset;
 		}
 		else
@@ -856,6 +861,9 @@ struct MaterialShaderParameterGenerator
 			VertexUserUniformOffset = vsOffset;
 			vsOffset += sizeof(float) * 4 * materialFile.GetUniformCount();
 
+			// TODO : remove magic number
+			vsOffset += sizeof(float) * 4 * 13 * materialFile.Gradients.size();
+
 			VertexShaderUniformBufferSize = vsOffset;
 		}
 
@@ -876,17 +884,14 @@ struct MaterialShaderParameterGenerator
 		PixelReconstructionParam2Offset = psOffset;
 		psOffset += sizeof(float) * 4;
 
-		if (materialFile.GetShadingModel() == ::Effekseer::ShadingModelType::Lit)
-		{
-			PixelLightDirectionOffset = psOffset;
-			psOffset += sizeof(float) * 4;
+		PixelLightDirectionOffset = psOffset;
+		psOffset += sizeof(float) * 4;
 
-			PixelLightColorOffset = psOffset;
-			psOffset += sizeof(float) * 4;
+		PixelLightColorOffset = psOffset;
+		psOffset += sizeof(float) * 4;
 
-			PixelLightAmbientColorOffset = psOffset;
-			psOffset += sizeof(float) * 4;
-		}
+		PixelLightAmbientColorOffset = psOffset;
+		psOffset += sizeof(float) * 4;
 
 		if (materialFile.GetHasRefraction() && stage == 1)
 		{
@@ -896,6 +901,9 @@ struct MaterialShaderParameterGenerator
 
 		PixelUserUniformOffset = psOffset;
 		psOffset += sizeof(float) * 4 * materialFile.GetUniformCount();
+
+		// TODO : remove magic number
+		psOffset += sizeof(float) * 4 * 13 * materialFile.Gradients.size();
 
 		PixelShaderUniformBufferSize = psOffset;
 	}
@@ -1027,7 +1035,9 @@ struct ShaderParameterCollector
 			IsDepthRequired = true;
 		}
 
-		if (renderer->GetRenderMode() == Effekseer::RenderMode::Wireframe)
+		// TODO : refactor in 1.7
+		const auto whiteMode = renderer->GetRenderMode() == Effekseer::RenderMode::Wireframe || renderer->GetExternalShaderSettings() != nullptr;
+		if (whiteMode)
 		{
 			ShaderType = RendererShaderType::Unlit;
 		}
@@ -1081,7 +1091,8 @@ struct ShaderParameterCollector
 			ShaderType = RendererShaderType::Unlit;
 		}
 
-		if (renderer->GetRenderMode() == Effekseer::RenderMode::Wireframe)
+		// TODO : refactor in 1.7
+		if (whiteMode)
 		{
 			TextureCount = 1;
 			Textures[0] = renderer->GetImpl()->GetProxyTexture(EffekseerRenderer::ProxyTextureType::White);
@@ -1484,7 +1495,7 @@ struct PixelConstantBuffer
 	EdgeParameter EdgeParam;
 	SoftParticleParameter SoftParticleParam;
 	float UVInversedBack[4];
-	std::array<float,4> MiscFlags;
+	std::array<float, 4> MiscFlags;
 
 	void SetModelFlipbookParameter(float enableInterpolation, float interpolationType)
 	{
@@ -1559,6 +1570,99 @@ struct PixelConstantBufferDistortion
 };
 
 void CalculateAlignedTextureInformation(Effekseer::Backend::TextureFormatType format, const std::array<int, 2>& size, int32_t& sizePerWidth, int32_t& height);
+
+//! only support OpenGL
+Effekseer::Backend::VertexLayoutRef GetVertexLayout(Effekseer::Backend::GraphicsDeviceRef graphicsDevice, RendererShaderType type);
+
+struct FlipbookVertexBuffer
+{
+	union
+	{
+		float Buffer[8];
+
+		struct
+		{
+			float enableInterpolation;
+			float loopType;
+			float divideX;
+			float divideY;
+			float onesizeX;
+			float onesizeY;
+			float offsetX;
+			float offsetY;
+		};
+	};
+};
+
+struct RendererStateFlipbook
+{
+	int32_t EnableInterpolation = 0;
+	int32_t UVLoopType = 0;
+	int32_t InterpolationType = 0;
+	int32_t FlipbookDivideX = 0;
+	int32_t FlipbookDivideY = 0;
+	float OneSizeX = 0;
+	float OneSizeY = 0;
+	float OffsetX = 0;
+	float OffsetY = 0;
+
+	bool operator==(const RendererStateFlipbook& state) const
+	{
+		return !(*this != state);
+	}
+
+	bool operator!=(const RendererStateFlipbook& state) const
+	{
+		if (EnableInterpolation != state.EnableInterpolation)
+			return true;
+		if (UVLoopType != state.UVLoopType)
+			return true;
+		if (InterpolationType != state.InterpolationType)
+			return true;
+		if (FlipbookDivideX != state.FlipbookDivideX)
+			return true;
+		if (FlipbookDivideY != state.FlipbookDivideY)
+			return true;
+		if (OneSizeX != state.OneSizeX)
+			return true;
+		if (OneSizeY != state.OneSizeY)
+			return true;
+		if (OffsetX != state.OffsetX)
+			return true;
+		if (OffsetY != state.OffsetY)
+			return true;
+		return false;
+	}
+};
+
+inline FlipbookVertexBuffer ToVertexBuffer(const RendererStateFlipbook& state)
+{
+	FlipbookVertexBuffer ret;
+	ret.enableInterpolation = static_cast<float>(state.EnableInterpolation);
+	ret.loopType = static_cast<float>(state.UVLoopType);
+	ret.divideX = static_cast<float>(state.FlipbookDivideX);
+	ret.divideY = static_cast<float>(state.FlipbookDivideY);
+	ret.onesizeX = state.OneSizeX;
+	ret.onesizeY = state.OneSizeY;
+	ret.offsetX = state.OffsetX;
+	ret.offsetY = state.OffsetY;
+	return ret;
+}
+
+inline RendererStateFlipbook ToState(const Effekseer::NodeRendererFlipbookParameter& param)
+{
+	RendererStateFlipbook ret;
+	ret.EnableInterpolation = param.EnableInterpolation;
+	ret.UVLoopType = param.UVLoopType;
+	ret.InterpolationType = param.InterpolationType;
+	ret.FlipbookDivideX = param.FlipbookDivideX;
+	ret.FlipbookDivideY = param.FlipbookDivideY;
+	ret.OneSizeX = param.OneSize[0];
+	ret.OneSizeY = param.OneSize[1];
+	ret.OffsetX = param.Offset[0];
+	ret.OffsetY = param.Offset[1];
+	return ret;
+}
 
 } // namespace EffekseerRenderer
 #endif // __EFFEKSEERRENDERER_COMMON_UTILS_H__

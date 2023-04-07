@@ -9,6 +9,7 @@ CFLAGS += '-I' .. EFFEKSEER_PLUGIN .. '/src/effekseer/src/Effekseer/'
 CFLAGS += '-I' .. EFFEKSEER_PLUGIN .. '/src/effekseer/src/EffekseerRendererGL/'
 CFLAGS += '-fPIC'
 CFLAGS += '-DNDEBUG'
+CFLAGS += '-D__DISABLED_DEFAULT_TEXTURE_LOADER__'
 
 if tup.getconfig('DEBUG') == 'y' then
 	CFLAGS += '-g'

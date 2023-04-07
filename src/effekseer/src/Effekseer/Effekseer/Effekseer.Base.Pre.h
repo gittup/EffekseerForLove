@@ -102,39 +102,6 @@ class Texture;
 
 using ThreadNativeHandleType = std::thread::native_handle_type;
 
-/**
-	@brief	Memory Allocation function
-*/
-typedef void*(EFK_STDCALL* MallocFunc)(unsigned int size);
-
-/**
-	@brief	Memory Free function
-*/
-typedef void(EFK_STDCALL* FreeFunc)(void* p, unsigned int size);
-
-/**
-	@brief	AlignedMemory Allocation function
-*/
-typedef void*(EFK_STDCALL* AlignedMallocFunc)(unsigned int size, unsigned int alignment);
-
-/**
-	@brief	AlignedMemory Free function
-*/
-typedef void(EFK_STDCALL* AlignedFreeFunc)(void* p, unsigned int size);
-
-/**
-	@brief	Random Function
-*/
-typedef int(EFK_STDCALL* RandFunc)(void);
-
-/**
-	@brief	エフェクトのインスタンス破棄時のコールバックイベント
-	@param	manager	[in]	所属しているマネージャー
-	@param	handle	[in]	エフェクトのインスタンスのハンドル
-	@param	isRemovingManager	[in]	マネージャーを破棄したときにエフェクトのインスタンスを破棄しているか
-*/
-typedef void(EFK_STDCALL* EffectInstanceRemovingCallback)(Manager* manager, Handle handle, bool isRemovingManager);
-
 #define ES_SAFE_ADDREF(val)                                                                     \
 	static_assert(std::is_class<decltype(val)>::value != true, "val must not be class/struct"); \
 	if ((val) != nullptr)                                                                       \
@@ -171,6 +138,8 @@ const int32_t UserTextureSlotMax = 6;
 
 //! the maximum number of uniform slot which can be specified by an user
 const int32_t UserUniformSlotMax = 16;
+
+const int32_t UserGradientSlotMax = 2;
 
 //! the maximum number of texture slot including textures system specified
 const int32_t TextureSlotMax = 8;
@@ -299,6 +268,18 @@ enum class ReloadingThreadType
 {
 	Main,
 	Render,
+};
+
+enum class TrailSmoothingType : int32_t
+{
+	Off = 0,
+	On = 1,
+};
+
+enum class TrailTimeType : int32_t
+{
+	FirstParticle = 0,
+	ParticleGroup = 1,
 };
 
 //----------------------------------------------------------------------------------
@@ -686,7 +667,7 @@ public:
 	}
 
 	template <class U>
-	RefPtr<U> DownCast()
+	RefPtr<U> DownCast() const
 	{
 		auto ptr = Get();
 		SafeAddRef(ptr);
@@ -870,6 +851,51 @@ void SetLogger(const std::function<void(LogType, const std::string&)>& logger);
 
 void Log(LogType logType, const std::string& message);
 
+struct Gradient
+{
+	static const int KeyMax = 8;
+
+	struct ColorKey
+	{
+		float Position;
+		std::array<float, 3> Color;
+		float Intensity;
+	};
+
+	struct AlphaKey
+	{
+		float Position;
+		float Alpha;
+	};
+
+	int ColorCount = 0;
+	int AlphaCount = 0;
+	std::array<ColorKey, KeyMax> Colors;
+	std::array<AlphaKey, KeyMax> Alphas;
+
+	std::array<float, 4> GetColor(float x) const;
+
+	std::array<float, 4> GetColorAndIntensity(float x) const;
+
+	float GetAlpha(float x) const;
+
+	Gradient()
+	{
+		for (auto& c : Colors)
+		{
+			c.Color.fill(1.0f);
+			c.Intensity = 1.0f;
+			c.Position = 0.0f;
+		}
+
+		for (auto& a : Alphas)
+		{
+			a.Alpha = 1.0f;
+			a.Position = 0.0f;
+		}
+	}
+};
+
 enum class TextureColorType : int32_t
 {
 	Color,
@@ -924,6 +950,9 @@ struct MaterialRenderData
 
 	//! used uniforms in MaterialType::File
 	std::vector<std::array<float, 4>> MaterialUniforms;
+
+	//! TODO improve
+	std::vector<std::shared_ptr<Gradient>> MaterialGradients;
 };
 
 /**
@@ -938,6 +967,21 @@ struct NodeRendererDepthParameter
 	ZSortType ZSort = ZSortType::None;
 	float SuppressionOfScalingByDepth = 1.0f;
 	float DepthClipping = FLT_MAX;
+};
+
+/**
+	@brief	\~english	Flipbook parameter parameters which is passed into a renderer
+			\~japanese	レンダラーに渡されるフリップブックに関するパラメーター
+*/
+struct NodeRendererFlipbookParameter
+{
+	bool EnableInterpolation = false;
+	int32_t UVLoopType = 0;
+	int32_t InterpolationType = 0;
+	int32_t FlipbookDivideX = 1;
+	int32_t FlipbookDivideY = 1;
+	std::array<float, 2> OneSize = {0, 0};
+	std::array<float, 2> Offset = {0, 0};
 };
 
 /**
@@ -957,17 +1001,13 @@ struct NodeRendererBasicParameter
 	std::array<TextureFilterType, TextureSlotMax> TextureFilters;
 	std::array<TextureWrapType, TextureSlotMax> TextureWraps;
 
+	NodeRendererFlipbookParameter Flipbook;
+
 	float UVDistortionIntensity = 1.0f;
 
 	int32_t TextureBlendType = -1;
 
 	float BlendUVDistortionIntensity = 1.0f;
-
-	bool EnableInterpolation = false;
-	int32_t UVLoopType = 0;
-	int32_t InterpolationType = 0;
-	int32_t FlipbookDivideX = 1;
-	int32_t FlipbookDivideY = 1;
 
 	float EmissiveScaling = 1.0f;
 
@@ -1003,7 +1043,7 @@ struct NodeRendererBasicParameter
 			}
 		}
 
-		if (EnableInterpolation)
+		if (Flipbook.EnableInterpolation)
 			return true;
 
 		if (TextureBlendType != -1)

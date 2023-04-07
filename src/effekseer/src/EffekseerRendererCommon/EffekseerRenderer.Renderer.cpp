@@ -9,18 +9,7 @@
 namespace EffekseerRenderer
 {
 
-::Effekseer::TextureLoaderRef CreateTextureLoader(::Effekseer::Backend::GraphicsDeviceRef gprahicsDevice,
-												  ::Effekseer::FileInterface* fileInterface,
-												  ::Effekseer::ColorSpaceType colorSpaceType)
-{
-#ifdef __EFFEKSEER_RENDERER_INTERNAL_LOADER__
-	return ::Effekseer::MakeRefPtr<TextureLoader>(gprahicsDevice.Get(), fileInterface, colorSpaceType);
-#else
-	return nullptr;
-#endif
-}
-
-::Effekseer::ModelLoaderRef CreateModelLoader(::Effekseer::Backend::GraphicsDeviceRef gprahicsDevice, ::Effekseer::FileInterface* fileInterface)
+::Effekseer::ModelLoaderRef CreateModelLoader(::Effekseer::Backend::GraphicsDeviceRef gprahicsDevice, ::Effekseer::FileInterfaceRef fileInterface)
 {
 	return ::Effekseer::MakeRefPtr<ModelLoader>(gprahicsDevice, fileInterface);
 }
@@ -198,10 +187,12 @@ void Renderer::SetBackground(::Effekseer::Backend::TextureRef texture)
 
 	Effekseer::Backend::TextureParameter param;
 	param.Format = Effekseer::Backend::TextureFormatType::R8G8B8A8_UNORM;
-	param.Size = {1, 1};
-	param.GenerateMipmap = false;
-	param.InitialData.assign(buf.begin(), buf.end());
-	return GetGraphicsDevice()->CreateTexture(param);
+	param.Dimension = 2;
+	param.Size = {1, 1, 1};
+	param.MipLevelCount = 1;
+	Effekseer::CustomVector<uint8_t> initialData;
+	initialData.assign(buf.begin(), buf.end());
+	return GetGraphicsDevice()->CreateTexture(param, initialData);
 }
 
 void Renderer::DeleteProxyTexture(::Effekseer::Backend::TextureRef& texture)
@@ -227,6 +218,16 @@ void Renderer::SetMaintainGammaColorInLinearColorSpace(bool value)
 Effekseer::Backend::GraphicsDeviceRef Renderer::GetGraphicsDevice() const
 {
 	return nullptr;
+}
+
+std::shared_ptr<ExternalShaderSettings> Renderer::GetExternalShaderSettings() const
+{
+	return impl->externalShaderSettings;
+}
+
+void Renderer::SetExternalShaderSettings(const std::shared_ptr<ExternalShaderSettings>& settings)
+{
+	impl->externalShaderSettings = settings;
 }
 
 } // namespace EffekseerRenderer

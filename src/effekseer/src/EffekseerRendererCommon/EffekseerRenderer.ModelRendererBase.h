@@ -28,7 +28,7 @@ struct ModelRendererVertexConstantBuffer
 	Effekseer::Matrix44 ModelMatrix[MODEL_COUNT];
 	float ModelUV[MODEL_COUNT][4];
 
-	void SetModelFlipbookParameter(float enableInterpolation, float loopType, float divideX, float divideY)
+	void SetModelFlipbookParameter(const Effekseer::NodeRendererFlipbookParameter& param)
 	{
 	}
 
@@ -85,32 +85,16 @@ struct ModelRendererAdvancedVertexConstantBuffer
 
 	float ModelBlendUVDistortionUV[MODEL_COUNT][4];
 
-	struct
-	{
-		union
-		{
-			float Buffer[4];
-
-			struct
-			{
-				float EnableInterpolation;
-				float LoopType;
-				float DivideX;
-				float DivideY;
-			};
-		};
-	} ModelFlipbookParameter;
+	FlipbookVertexBuffer ModelFlipbookParameter;
 
 	float ModelFlipbookIndexAndNextRate[MODEL_COUNT][4];
 
 	float ModelAlphaThreshold[MODEL_COUNT][4];
 
-	void SetModelFlipbookParameter(float enableInterpolation, float loopType, float divideX, float divideY)
+	void SetModelFlipbookParameter(const Effekseer::NodeRendererFlipbookParameter& param)
 	{
-		ModelFlipbookParameter.EnableInterpolation = enableInterpolation;
-		ModelFlipbookParameter.LoopType = loopType;
-		ModelFlipbookParameter.DivideX = divideX;
-		ModelFlipbookParameter.DivideY = divideY;
+		const auto state = ToState(param);
+		ModelFlipbookParameter = ToVertexBuffer(state);
 	}
 
 	void SetModelAlphaUV(int32_t index, float x, float y, float w, float h)
@@ -184,7 +168,7 @@ struct ModelRendererMaterialVertexConstantBuffer
 	float LightAmbientColor[4];
 	float UVInversed[4];
 
-	void SetModelFlipbookParameter(float enableInterpolation, float loopType, float divideX, float divideY)
+	void SetModelFlipbookParameter(const Effekseer::NodeRendererFlipbookParameter& param)
 	{
 	}
 
@@ -448,6 +432,8 @@ protected:
 		cutomData1Ptr = nullptr;
 		cutomData2Ptr = nullptr;
 
+		const auto materialGradientCount = static_cast<int32_t>(Effekseer::Min(materialRenderData->MaterialGradients.size(), Effekseer::UserGradientSlotMax));
+
 		GetInversedFlags(renderer, uvInversed, uvInversedBack);
 
 		std::array<float, 4> uvInversedMaterial;
@@ -467,6 +453,7 @@ protected:
 		predefined_uniforms[0] = renderer->GetTime();
 		predefined_uniforms[1] = param.Magnification;
 		predefined_uniforms[2] = renderer->GetImpl()->MaintainGammaColorInLinearColorSpace ? 1.0f : 0.0f;
+		predefined_uniforms[3] = param.LocalTime;
 
 		// vs
 		int32_t vsOffset = sizeof(Effekseer::Matrix44) + (sizeof(Effekseer::Matrix44) + sizeof(float) * 4 * 2) * InstanceCount;
@@ -497,6 +484,13 @@ protected:
 		{
 			renderer->SetVertexBufferToShader(materialRenderData->MaterialUniforms[i].data(), sizeof(float) * 4, vsOffset);
 			vsOffset += (sizeof(float) * 4);
+		}
+
+		for (size_t i = 0; i < materialGradientCount; i++)
+		{
+			auto data = ToUniform(*materialRenderData->MaterialGradients[i]);
+			renderer->SetVertexBufferToShader(data.data(), sizeof(float) * 4 * 13, vsOffset);
+			vsOffset += (sizeof(float) * 4) * 13;
 		}
 
 		// ps
@@ -537,28 +531,25 @@ protected:
 		// shader model
 		material = param.EffectPointer->GetMaterial(materialRenderData->MaterialIndex);
 
-		if (material->ShadingModel == ::Effekseer::ShadingModelType::Lit)
-		{
-			float lightDirection[4];
-			float lightColor[4];
-			float lightAmbientColor[4];
+		float lightDirection[4];
+		float lightColor[4];
+		float lightAmbientColor[4];
 
-			::Effekseer::SIMD::Vec3f lightDirection3 = renderer->GetLightDirection();
-			lightDirection3 = lightDirection3.Normalize();
+		::Effekseer::SIMD::Vec3f lightDirection3 = renderer->GetLightDirection();
+		lightDirection3 = lightDirection3.Normalize();
 
-			VectorToFloat4(lightDirection3, lightDirection);
-			ColorToFloat4(renderer->GetLightColor(), lightColor);
-			ColorToFloat4(renderer->GetLightAmbientColor(), lightAmbientColor);
+		VectorToFloat4(lightDirection3, lightDirection);
+		ColorToFloat4(renderer->GetLightColor(), lightColor);
+		ColorToFloat4(renderer->GetLightAmbientColor(), lightAmbientColor);
 
-			renderer->SetPixelBufferToShader(lightDirection, sizeof(float) * 4, psOffset);
-			psOffset += (sizeof(float) * 4);
+		renderer->SetPixelBufferToShader(lightDirection, sizeof(float) * 4, psOffset);
+		psOffset += (sizeof(float) * 4);
 
-			renderer->SetPixelBufferToShader(lightColor, sizeof(float) * 4, psOffset);
-			psOffset += (sizeof(float) * 4);
+		renderer->SetPixelBufferToShader(lightColor, sizeof(float) * 4, psOffset);
+		psOffset += (sizeof(float) * 4);
 
-			renderer->SetPixelBufferToShader(lightAmbientColor, sizeof(float) * 4, psOffset);
-			psOffset += (sizeof(float) * 4);
-		}
+		renderer->SetPixelBufferToShader(lightAmbientColor, sizeof(float) * 4, psOffset);
+		psOffset += (sizeof(float) * 4);
 
 		// refraction
 		if (material->RefractionModelUserPtr != nullptr && renderPassInd == 0)
@@ -572,6 +563,13 @@ protected:
 		{
 			renderer->SetPixelBufferToShader(materialRenderData->MaterialUniforms[i].data(), sizeof(float) * 4, psOffset);
 			psOffset += (sizeof(float) * 4);
+		}
+
+		for (int32_t i = 0; i < materialGradientCount; i++)
+		{
+			auto data = ToUniform(*materialRenderData->MaterialGradients[i]);
+			renderer->SetPixelBufferToShader(data.data(), sizeof(float) * 4 * 13, psOffset);
+			psOffset += (sizeof(float) * 4) * 13;
 		}
 	}
 
@@ -601,8 +599,8 @@ protected:
 			pcb->UVInversedBack[0] = uvInversedBack[0];
 			pcb->UVInversedBack[1] = uvInversedBack[1];
 
-			pcb->FlipbookParam.EnableInterpolation = static_cast<float>(param.BasicParameterPtr->EnableInterpolation);
-			pcb->FlipbookParam.InterpolationType = static_cast<float>(param.BasicParameterPtr->InterpolationType);
+			pcb->FlipbookParam.EnableInterpolation = static_cast<float>(param.BasicParameterPtr->Flipbook.EnableInterpolation);
+			pcb->FlipbookParam.InterpolationType = static_cast<float>(param.BasicParameterPtr->Flipbook.InterpolationType);
 
 			pcb->UVDistortionParam.Intensity = param.BasicParameterPtr->UVDistortionIntensity;
 			pcb->UVDistortionParam.BlendIntensity = param.BasicParameterPtr->BlendUVDistortionIntensity;
@@ -652,7 +650,7 @@ protected:
 
 			if (REQUIRE_ADVANCED_DATA)
 			{
-				pcb->SetModelFlipbookParameter(param.BasicParameterPtr->EnableInterpolation, static_cast<float>(param.BasicParameterPtr->InterpolationType));
+				pcb->SetModelFlipbookParameter(param.BasicParameterPtr->Flipbook.EnableInterpolation, static_cast<float>(param.BasicParameterPtr->Flipbook.InterpolationType));
 				pcb->SetModelUVDistortionParameter(param.BasicParameterPtr->UVDistortionIntensity, param.BasicParameterPtr->BlendUVDistortionIntensity, {uvInversed[0], uvInversed[1]});
 				pcb->SetModelBlendTextureParameter(static_cast<float>(param.BasicParameterPtr->TextureBlendType));
 
@@ -698,10 +696,7 @@ protected:
 
 		vcb->CameraMatrix = renderer->GetCameraProjectionMatrix();
 
-		vcb->SetModelFlipbookParameter(static_cast<float>(param.BasicParameterPtr->EnableInterpolation),
-									   static_cast<float>(param.BasicParameterPtr->UVLoopType),
-									   static_cast<float>(param.BasicParameterPtr->FlipbookDivideX),
-									   static_cast<float>(param.BasicParameterPtr->FlipbookDivideY));
+		vcb->SetModelFlipbookParameter(param.BasicParameterPtr->Flipbook);
 	}
 
 public:
@@ -841,6 +836,15 @@ public:
 		if (param.ModelIndex < 0)
 			return;
 
+		if (renderer->GetExternalShaderSettings() == nullptr)
+		{
+			shader_unlit->OverrideShader(nullptr);
+		}
+		else
+		{
+			shader_unlit->OverrideShader(renderer->GetExternalShaderSettings()->ModelShader);
+		}
+
 		int32_t renderPassCount = 1;
 
 		if (param.BasicParameterPtr->MaterialRenderDataPtr != nullptr && param.BasicParameterPtr->MaterialRenderDataPtr->MaterialIndex >= 0)
@@ -962,7 +966,8 @@ public:
 		SHADER* shader_ = nullptr;
 		bool renderDistortedBackground = false;
 
-		if (materialRenderData != nullptr && materialRenderData->MaterialIndex >= 0 &&
+		if (collector_.ShaderType == EffekseerRenderer::RendererShaderType::Material &&
+			materialRenderData != nullptr && materialRenderData->MaterialIndex >= 0 &&
 			param.EffectPointer->GetMaterial(materialRenderData->MaterialIndex) != nullptr)
 		{
 			material = param.EffectPointer->GetMaterial(materialRenderData->MaterialIndex);
@@ -1029,7 +1034,12 @@ public:
 		state.AlphaBlend = param.BasicParameterPtr->AlphaBlend;
 		state.CullingType = param.Culling;
 
-		if (renderer->GetRenderMode() == Effekseer::RenderMode::Wireframe)
+		// TODO : refactor in 1.7
+		if (renderer->GetExternalShaderSettings() != nullptr)
+		{
+			state.AlphaBlend = renderer->GetExternalShaderSettings()->Blend;
+		}
+		else if (renderer->GetRenderMode() == Effekseer::RenderMode::Wireframe)
 		{
 			state.AlphaBlend = ::Effekseer::AlphaBlendType::Opacity;
 		}

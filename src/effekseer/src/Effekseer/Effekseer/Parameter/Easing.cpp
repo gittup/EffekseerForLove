@@ -1,5 +1,7 @@
 #include "Easing.h"
 
+#include <algorithm>
+
 namespace Effekseer
 {
 
@@ -20,7 +22,7 @@ float ParameterEasingFloat::GetValue(const InstanceEasingType& instance, float t
 	return get2Point(instance, t);
 }
 
-void ParameterEasingFloat::Init(InstanceEasingType& instance, Effect* e, InstanceGlobal* instg, Instance* parent, IRandObject* rand)
+void ParameterEasingFloat::Init(InstanceEasingType& instance, const Effect* e, const InstanceGlobal* instg, const Instance* parent, IRandObject* rand) const
 {
 	auto rvs = ApplyEq(e,
 					   instg,
@@ -50,8 +52,8 @@ void ParameterEasingFloat::Init(InstanceEasingType& instance, Effect* e, Instanc
 		instance.middle = rvm.getValue(*rand);
 
 		const auto eps = 0.000001f;
-		const auto dist1 = (instance.middle - instance.start);
-		const auto dist2 = (instance.end - instance.middle);
+		const auto dist1 = std::abs(instance.middle - instance.start);
+		const auto dist2 = std::abs(instance.end - instance.middle);
 		if (dist1 + dist2 > eps)
 		{
 			instance.Rate = dist1 / (dist1 + dist2);
@@ -98,7 +100,7 @@ SIMD::Vec3f ParameterEasingSIMDVec3::GetValue(const InstanceEasingType& instance
 	}
 }
 
-void ParameterEasingSIMDVec3::Init(InstanceEasingType& instance, Effect* e, InstanceGlobal* instg, Instance* parent, IRandObject* rand, const std::array<float, 3>& scale, const std::array<float, 3>& scaleInv)
+void ParameterEasingSIMDVec3::Init(InstanceEasingType& instance, const Effect* e, const InstanceGlobal* instg, const Instance* parent, IRandObject* rand, const std::array<float, 3>& scale, const std::array<float, 3>& scaleInv) const
 {
 	auto rvs = ApplyEq(e,
 					   instg,

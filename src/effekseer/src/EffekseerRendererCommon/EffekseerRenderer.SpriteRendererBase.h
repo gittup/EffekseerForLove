@@ -108,11 +108,7 @@ protected:
 		state.DepthTest = param.ZTest;
 		state.DepthWrite = param.ZWrite;
 
-		state.EnableInterpolation = param.BasicParameterPtr->EnableInterpolation;
-		state.UVLoopType = param.BasicParameterPtr->UVLoopType;
-		state.InterpolationType = param.BasicParameterPtr->InterpolationType;
-		state.FlipbookDivideX = param.BasicParameterPtr->FlipbookDivideX;
-		state.FlipbookDivideY = param.BasicParameterPtr->FlipbookDivideY;
+		state.Flipbook = ToState(param.BasicParameterPtr->Flipbook);
 
 		state.UVDistortionIntensity = param.BasicParameterPtr->UVDistortionIntensity;
 
@@ -138,6 +134,8 @@ protected:
 
 		state.RenderingUserData = param.UserData;
 		state.HandleUserData = userData;
+
+		state.LocalTime = param.LocalTime;
 
 		state.CopyMaterialFromParameterToState(
 			m_renderer,

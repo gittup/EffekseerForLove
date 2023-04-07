@@ -112,12 +112,12 @@ class LoveFileReader : public ::Effekseer::FileReader
 				pos = position;
 		}
 
-		int GetPosition()
+		int GetPosition() const
 		{
 			return pos;
 		}
 
-		size_t GetLength()
+		size_t GetLength() const
 		{
 			return size;
 		}
@@ -136,18 +136,18 @@ class LoveFileReader : public ::Effekseer::FileReader
 class LoveFileInterface : public ::Effekseer::FileInterface
 {
 	public:
-		::Effekseer::FileReader *OpenRead(const char16_t* efkpath)
+		::Effekseer::FileReaderRef OpenRead(const char16_t* efkpath)
 		{
 			char path[256];
 			::Effekseer::ConvertUtf16ToUtf8(path, 256, efkpath);
 			LoveFileReader *reader = new LoveFileReader(path);
 			if(reader->IsValid()) {
-				return reader;
+				return ::Effekseer::RefPtr<LoveFileReader>(reader);
 			}
 			return NULL;
 		}
 
-		::Effekseer::FileWriter *OpenWrite(const char16_t* efkpath)
+		::Effekseer::FileWriterRef OpenWrite(const char16_t* efkpath)
 		{
 			char path[256];
 			::Effekseer::ConvertUtf16ToUtf8(path, 256, efkpath);
@@ -234,13 +234,14 @@ public:
 
 		::Effekseer::Backend::TextureParameter param;
 		param.Format = ::Effekseer::Backend::TextureFormatType::R8G8B8A8_UNORM;
-		param.GenerateMipmap = true;
+		param.MipLevelCount = 0;
 		param.Size[0] = width;
 		param.Size[1] = height;
-		param.InitialData.assign(data, data + width * height * 4);
+		Effekseer::CustomVector<uint8_t> initialData;
+		initialData.assign(data, data + width * height * 4);
 
 		auto texture = ::Effekseer::MakeRefPtr<::Effekseer::Texture>();
-		texture->SetBackend(_graphicsDevice->CreateTexture(param));
+		texture->SetBackend(_graphicsDevice->CreateTexture(param, initialData));
 
 		lua_pop(L, 1); // Pop image data
 		return texture;
@@ -269,7 +270,7 @@ EffectManager::EffectManager(bool warn_on_missing_textures)
 
 	renderer = ::EffekseerRendererGL::Renderer::Create(8000, gltype);
 
-	::Effekseer::FileInterface *fileinterface = new LoveFileInterface();
+	auto fileinterface = ::Effekseer::MakeRefPtr<LoveFileInterface>();
 	manager = ::Effekseer::Manager::Create(8000);
 
 	manager->SetSpriteRenderer(renderer->CreateSpriteRenderer());
@@ -279,7 +280,7 @@ EffectManager::EffectManager(bool warn_on_missing_textures)
 	manager->SetModelRenderer(renderer->CreateModelRenderer());
 
 	manager->SetEffectLoader(::Effekseer::Effect::CreateEffectLoader(fileinterface));
-	manager->SetTextureLoader(::Effekseer::TextureLoaderRef(new LoveTextureLoader(renderer->GetGraphicsDevice())));
+	manager->SetTextureLoader(::Effekseer::MakeRefPtr<LoveTextureLoader>(renderer->GetGraphicsDevice()));
 	manager->SetModelLoader(renderer->CreateModelLoader(fileinterface));
 	manager->SetMaterialLoader(renderer->CreateMaterialLoader(fileinterface));
  	manager->SetCurveLoader(Effekseer::MakeRefPtr<Effekseer::CurveLoader>());

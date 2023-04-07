@@ -54,7 +54,6 @@
 #endif
 
 #if _WIN32
-#pragma comment(lib, "gdiplus.lib")
 #pragma comment(lib, "opengl32.lib")
 #endif
 
@@ -102,6 +101,18 @@ namespace EffekseerRenderer
 
 class Renderer;
 using RendererRef = ::Effekseer::RefPtr<Renderer>;
+
+/**
+	@brief	Specify a shader for renderer from external class
+	@note
+	For Effekseer tools
+*/
+struct ExternalShaderSettings
+{
+	Effekseer::Backend::ShaderRef StandardShader;
+	Effekseer::Backend::ShaderRef ModelShader;
+	Effekseer::AlphaBlendType Blend;
+};
 
 /**
 	@brief	
@@ -188,11 +199,7 @@ struct DepthReconstructionParameter
 	float ProjectionMatrix44 = 0.0f;
 };
 
-::Effekseer::TextureLoaderRef CreateTextureLoader(::Effekseer::Backend::GraphicsDeviceRef gprahicsDevice,
-												  ::Effekseer::FileInterface* fileInterface = nullptr,
-												  ::Effekseer::ColorSpaceType colorSpaceType = ::Effekseer::ColorSpaceType::Gamma);
-
-::Effekseer::ModelLoaderRef CreateModelLoader(::Effekseer::Backend::GraphicsDeviceRef gprahicsDevice, ::Effekseer::FileInterface* fileInterface = nullptr);
+::Effekseer::ModelLoaderRef CreateModelLoader(::Effekseer::Backend::GraphicsDeviceRef gprahicsDevice, ::Effekseer::FileInterfaceRef fileInterface = nullptr);
 
 class Renderer : public ::Effekseer::IReference
 {
@@ -345,12 +352,12 @@ public:
 	/**
 		@brief	標準のテクスチャ読込クラスを生成する。
 	*/
-	virtual ::Effekseer::TextureLoaderRef CreateTextureLoader(::Effekseer::FileInterface* fileInterface = nullptr) = 0;
+	virtual ::Effekseer::TextureLoaderRef CreateTextureLoader(::Effekseer::FileInterfaceRef fileInterface = nullptr) = 0;
 
 	/**
 		@brief	標準のモデル読込クラスを生成する。
 	*/
-	virtual ::Effekseer::ModelLoaderRef CreateModelLoader(::Effekseer::FileInterface* fileInterface = nullptr) = 0;
+	virtual ::Effekseer::ModelLoaderRef CreateModelLoader(::Effekseer::FileInterfaceRef fileInterface = nullptr) = 0;
 
 	/**
 	@brief
@@ -358,7 +365,7 @@ public:
 	\~japanese 標準のマテリアル読込クラスを生成する。
 
 	*/
-	virtual ::Effekseer::MaterialLoaderRef CreateMaterialLoader(::Effekseer::FileInterface* fileInterface = nullptr) = 0;
+	virtual ::Effekseer::MaterialLoaderRef CreateMaterialLoader(::Effekseer::FileInterfaceRef fileInterface = nullptr) = 0;
 
 	/**
 		@brief	レンダーステートを強制的にリセットする。
@@ -526,6 +533,20 @@ public:
 		\~Japanese	グラフィクスデバイスを取得する。
 	*/
 	virtual Effekseer::Backend::GraphicsDeviceRef GetGraphicsDevice() const;
+
+	/**
+		@brief	Get external shader settings
+		@note
+		For	Effekseer tools
+	*/
+	virtual std::shared_ptr<ExternalShaderSettings> GetExternalShaderSettings() const;
+
+	/**
+		@brief	Specify external shader settings
+		@note
+		For	Effekseer tools
+	*/
+	virtual void SetExternalShaderSettings(const std::shared_ptr<ExternalShaderSettings>& settings);
 };
 
 //----------------------------------------------------------------------------------
@@ -536,6 +557,21 @@ public:
 //
 //----------------------------------------------------------------------------------
 #endif // __EFFEKSEERRENDERER_RENDERER_H__
+#ifndef __EFFEKSEERRENDERER_TEXTURELOADER_H__
+#define __EFFEKSEERRENDERER_TEXTURELOADER_H__
+
+#include <Effekseer.h>
+
+namespace EffekseerRenderer
+{
+
+::Effekseer::TextureLoaderRef CreateTextureLoader(::Effekseer::Backend::GraphicsDeviceRef gprahicsDevice,
+												  ::Effekseer::FileInterfaceRef fileInterface = nullptr,
+												  ::Effekseer::ColorSpaceType colorSpaceType = ::Effekseer::ColorSpaceType::Gamma);
+
+} // namespace EffekseerRenderer
+
+#endif // __EFFEKSEERRENDERER_TEXTURELOADER_H__
 
 #ifndef __EFFEKSEERRENDERER_GL_RENDERER_H__
 #define __EFFEKSEERRENDERER_GL_RENDERER_H__
@@ -556,15 +592,8 @@ namespace EffekseerRendererGL
 
 ::Effekseer::Backend::GraphicsDeviceRef CreateGraphicsDevice(OpenGLDeviceType deviceType, bool isExtensionsEnabled = true);
 
-[[deprecated("please use EffekseerRenderer::CreateTextureLoader")]] ::Effekseer::TextureLoaderRef CreateTextureLoader(
-	Effekseer::Backend::GraphicsDeviceRef graphicsDevice,
-	::Effekseer::FileInterface* fileInterface = nullptr,
-	::Effekseer::ColorSpaceType colorSpaceType = ::Effekseer::ColorSpaceType::Gamma);
-
-[[deprecated("please use EffekseerRenderer::CreateModelLoader")]] ::Effekseer::ModelLoaderRef CreateModelLoader(::Effekseer::FileInterface* fileInterface = nullptr, OpenGLDeviceType deviceType = OpenGLDeviceType::OpenGL2);
-
 ::Effekseer::MaterialLoaderRef CreateMaterialLoader(Effekseer::Backend::GraphicsDeviceRef graphicsDevice,
-													::Effekseer::FileInterface* fileInterface = nullptr);
+													::Effekseer::FileInterfaceRef fileInterface = nullptr);
 
 Effekseer::Backend::TextureRef CreateTexture(Effekseer::Backend::GraphicsDeviceRef graphicsDevice, GLuint buffer, bool hasMipmap, const std::function<void()>& onDisposed);
 

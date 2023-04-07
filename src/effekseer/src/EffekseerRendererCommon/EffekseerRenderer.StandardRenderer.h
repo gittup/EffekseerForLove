@@ -32,11 +32,7 @@ struct StandardRendererState
 	::Effekseer::AlphaBlendType AlphaBlend;
 	::Effekseer::CullingType CullingType;
 
-	int32_t EnableInterpolation;
-	int32_t UVLoopType;
-	int32_t InterpolationType;
-	int32_t FlipbookDivideX;
-	int32_t FlipbookDivideY;
+	RendererStateFlipbook Flipbook;
 
 	float UVDistortionIntensity;
 
@@ -54,10 +50,14 @@ struct StandardRendererState
 	float SoftParticleDistanceNear = 0.0f;
 	float SoftParticleDistanceNearOffset = 0.0f;
 	float Maginification = 1.0f;
+	float LocalTime = 0.0f;
 
 	::Effekseer::RendererMaterialType MaterialType;
 	int32_t MaterialUniformCount = 0;
 	std::array<std::array<float, 4>, 16> MaterialUniforms;
+
+	int32_t MaterialGradientCount = 0;
+	std::array<std::array<std::array<float, 4>, 13>, Effekseer::UserGradientSlotMax> MaterialGradients;
 
 	int32_t CustomData1Count = 0;
 	int32_t CustomData2Count = 0;
@@ -78,11 +78,7 @@ struct StandardRendererState
 		AlphaBlend = ::Effekseer::AlphaBlendType::Blend;
 		CullingType = ::Effekseer::CullingType::Front;
 
-		EnableInterpolation = 0;
-		UVLoopType = 0;
-		InterpolationType = 0;
-		FlipbookDivideX = 0;
-		FlipbookDivideY = 0;
+		Flipbook = RendererStateFlipbook{};
 
 		UVDistortionIntensity = 1.0f;
 
@@ -98,6 +94,7 @@ struct StandardRendererState
 
 		MaterialType = ::Effekseer::RendererMaterialType::Default;
 		MaterialUniformCount = 0;
+		MaterialGradientCount = 0;
 		CustomData1Count = 0;
 		CustomData2Count = 0;
 
@@ -127,18 +124,8 @@ struct StandardRendererState
 			return true;
 		if (CullingType != state.CullingType)
 			return true;
-
-		if (EnableInterpolation != state.EnableInterpolation)
+		if (Flipbook != state.Flipbook)
 			return true;
-		if (UVLoopType != state.UVLoopType)
-			return true;
-		if (InterpolationType != state.InterpolationType)
-			return true;
-		if (FlipbookDivideX != state.FlipbookDivideX)
-			return true;
-		if (FlipbookDivideY != state.FlipbookDivideY)
-			return true;
-
 		if (UVDistortionIntensity != state.UVDistortionIntensity)
 			return true;
 		if (TextureBlendType != state.TextureBlendType)
@@ -173,6 +160,9 @@ struct StandardRendererState
 		if (Maginification != state.Maginification)
 			return true;
 
+		if (LocalTime != state.LocalTime)
+			return true;
+
 		if (MaterialType != state.MaterialType)
 			return true;
 		if (MaterialUniformCount != state.MaterialUniformCount)
@@ -183,6 +173,15 @@ struct StandardRendererState
 		for (int32_t i = 0; i < state.MaterialUniformCount; i++)
 		{
 			if (MaterialUniforms[i] != state.MaterialUniforms[i])
+				return true;
+		}
+
+		if (MaterialGradientCount != state.MaterialGradientCount)
+			return true;
+
+		for (int32_t i = 0; i < state.MaterialGradientCount; i++)
+		{
+			if (MaterialGradients[i] != state.MaterialGradients[i])
 				return true;
 		}
 
@@ -214,7 +213,12 @@ struct StandardRendererState
 	{
 		AlphaBlend = basicParam->AlphaBlend;
 
-		if (renderer->GetRenderMode() == ::Effekseer::RenderMode::Wireframe)
+		// TODO : refactor in 1.7
+		if (renderer->GetExternalShaderSettings() != nullptr)
+		{
+			AlphaBlend = renderer->GetExternalShaderSettings()->Blend;
+		}
+		else if (renderer->GetRenderMode() == ::Effekseer::RenderMode::Wireframe)
 		{
 			AlphaBlend = ::Effekseer::AlphaBlendType::Opacity;
 		}
@@ -237,6 +241,13 @@ struct StandardRendererState
 			{
 				MaterialUniforms[i] = Collector.MaterialRenderDataPtr->MaterialUniforms[i];
 			}
+
+			MaterialGradientCount =
+				static_cast<int32_t>(Effekseer::Min(Collector.MaterialRenderDataPtr->MaterialGradients.size(), MaterialGradients.size()));
+			for (size_t i = 0; i < MaterialGradientCount; i++)
+			{
+				MaterialGradients[i] = ToUniform(*Collector.MaterialRenderDataPtr->MaterialGradients[i]);
+			}
 		}
 		else
 		{
@@ -252,21 +263,7 @@ struct StandardRendererVertexBuffer
 	Effekseer::Matrix44 constantVSBuffer[2];
 	float uvInversed[4];
 
-	struct
-	{
-		union
-		{
-			float Buffer[4];
-
-			struct
-			{
-				float enableInterpolation;
-				float loopType;
-				float divideX;
-				float divideY;
-			};
-		};
-	} flipbookParameter;
+	FlipbookVertexBuffer flipbookParameter;
 };
 
 template <typename RENDERER, typename SHADER>
@@ -684,6 +681,7 @@ public:
 			predefined_uniforms[0] = m_renderer->GetTime();
 			predefined_uniforms[1] = renderState.Maginification;
 			predefined_uniforms[2] = m_renderer->GetImpl()->MaintainGammaColorInLinearColorSpace ? 1.0f : 0.0f;
+			predefined_uniforms[3] = renderState.LocalTime;
 
 			// vs
 			int32_t vsOffset = 0;
@@ -706,6 +704,12 @@ public:
 			{
 				m_renderer->SetVertexBufferToShader(renderState.MaterialUniforms[i].data(), sizeof(float) * 4, vsOffset);
 				vsOffset += (sizeof(float) * 4);
+			}
+
+			for (size_t i = 0; i < renderState.MaterialGradientCount; i++)
+			{
+				m_renderer->SetVertexBufferToShader(renderState.MaterialGradients[i].data(), sizeof(float) * 4 * 13, vsOffset);
+				vsOffset += (sizeof(float) * 4) * 13;
 			}
 
 			// ps
@@ -740,28 +744,25 @@ public:
 			psOffset += (sizeof(float) * 4);
 
 			// shader model
-			if (renderState.Collector.MaterialDataPtr->ShadingModel == ::Effekseer::ShadingModelType::Lit)
-			{
 
-				float lightDirection[4];
-				float lightColor[4];
-				float lightAmbientColor[4];
+			float lightDirection[4];
+			float lightColor[4];
+			float lightAmbientColor[4];
 
-				::Effekseer::SIMD::Vec3f lightDirection3 = m_renderer->GetLightDirection();
-				lightDirection3 = lightDirection3.Normalize();
-				VectorToFloat4(lightDirection3, lightDirection);
-				ColorToFloat4(m_renderer->GetLightColor(), lightColor);
-				ColorToFloat4(m_renderer->GetLightAmbientColor(), lightAmbientColor);
+			::Effekseer::SIMD::Vec3f lightDirection3 = m_renderer->GetLightDirection();
+			lightDirection3 = lightDirection3.Normalize();
+			VectorToFloat4(lightDirection3, lightDirection);
+			ColorToFloat4(m_renderer->GetLightColor(), lightColor);
+			ColorToFloat4(m_renderer->GetLightAmbientColor(), lightAmbientColor);
 
-				m_renderer->SetPixelBufferToShader(lightDirection, sizeof(float) * 4, psOffset);
-				psOffset += (sizeof(float) * 4);
+			m_renderer->SetPixelBufferToShader(lightDirection, sizeof(float) * 4, psOffset);
+			psOffset += (sizeof(float) * 4);
 
-				m_renderer->SetPixelBufferToShader(lightColor, sizeof(float) * 4, psOffset);
-				psOffset += (sizeof(float) * 4);
+			m_renderer->SetPixelBufferToShader(lightColor, sizeof(float) * 4, psOffset);
+			psOffset += (sizeof(float) * 4);
 
-				m_renderer->SetPixelBufferToShader(lightAmbientColor, sizeof(float) * 4, psOffset);
-				psOffset += (sizeof(float) * 4);
-			}
+			m_renderer->SetPixelBufferToShader(lightAmbientColor, sizeof(float) * 4, psOffset);
+			psOffset += (sizeof(float) * 4);
 
 			// refraction
 			if (renderState.Collector.MaterialDataPtr->RefractionUserPtr != nullptr && renderPass == 0)
@@ -776,6 +777,12 @@ public:
 				m_renderer->SetPixelBufferToShader(renderState.MaterialUniforms[i].data(), sizeof(float) * 4, psOffset);
 				psOffset += (sizeof(float) * 4);
 			}
+
+			for (size_t i = 0; i < renderState.MaterialGradientCount; i++)
+			{
+				m_renderer->SetPixelBufferToShader(renderState.MaterialGradients[i].data(), sizeof(float) * 4 * 13, psOffset);
+				psOffset += (sizeof(float) * 4) * 13;
+			}
 		}
 		else if (renderState.MaterialType == ::Effekseer::RendererMaterialType::Lighting)
 		{
@@ -784,11 +791,7 @@ public:
 			vcb.constantVSBuffer[1] = ToStruct(mCamera * mProj);
 			vcb.uvInversed[0] = uvInversed[0];
 			vcb.uvInversed[1] = uvInversed[1];
-
-			vcb.flipbookParameter.enableInterpolation = static_cast<float>(renderState.EnableInterpolation);
-			vcb.flipbookParameter.loopType = static_cast<float>(renderState.UVLoopType);
-			vcb.flipbookParameter.divideX = static_cast<float>(renderState.FlipbookDivideX);
-			vcb.flipbookParameter.divideY = static_cast<float>(renderState.FlipbookDivideY);
+			vcb.flipbookParameter = ToVertexBuffer(renderState.Flipbook);
 
 			m_renderer->SetVertexBufferToShader(&vcb, sizeof(StandardRendererVertexBuffer), 0);
 
@@ -805,8 +808,8 @@ public:
 			pcb.LightColor = m_renderer->GetLightColor().ToFloat4();
 			pcb.LightAmbientColor = m_renderer->GetLightAmbientColor().ToFloat4();
 
-			pcb.FlipbookParam.EnableInterpolation = static_cast<float>(renderState.EnableInterpolation);
-			pcb.FlipbookParam.InterpolationType = static_cast<float>(renderState.InterpolationType);
+			pcb.FlipbookParam.EnableInterpolation = static_cast<float>(renderState.Flipbook.EnableInterpolation);
+			pcb.FlipbookParam.InterpolationType = static_cast<float>(renderState.Flipbook.InterpolationType);
 
 			pcb.UVDistortionParam.Intensity = renderState.UVDistortionIntensity;
 			pcb.UVDistortionParam.BlendIntensity = renderState.BlendUVDistortionIntensity;
@@ -848,10 +851,7 @@ public:
 			vcb.uvInversed[2] = 0.0f;
 			vcb.uvInversed[3] = 0.0f;
 
-			vcb.flipbookParameter.enableInterpolation = static_cast<float>(renderState.EnableInterpolation);
-			vcb.flipbookParameter.loopType = static_cast<float>(renderState.UVLoopType);
-			vcb.flipbookParameter.divideX = static_cast<float>(renderState.FlipbookDivideX);
-			vcb.flipbookParameter.divideY = static_cast<float>(renderState.FlipbookDivideY);
+			vcb.flipbookParameter = ToVertexBuffer(renderState.Flipbook);
 
 			m_renderer->SetVertexBufferToShader(&vcb, sizeof(StandardRendererVertexBuffer), 0);
 
@@ -862,8 +862,8 @@ public:
 				pcb.UVInversedBack[0] = uvInversedBack[0];
 				pcb.UVInversedBack[1] = uvInversedBack[1];
 
-				pcb.FlipbookParam.EnableInterpolation = static_cast<float>(renderState.EnableInterpolation);
-				pcb.FlipbookParam.InterpolationType = static_cast<float>(renderState.InterpolationType);
+				pcb.FlipbookParam.EnableInterpolation = static_cast<float>(renderState.Flipbook.EnableInterpolation);
+				pcb.FlipbookParam.InterpolationType = static_cast<float>(renderState.Flipbook.InterpolationType);
 
 				pcb.UVDistortionParam.Intensity = renderState.UVDistortionIntensity;
 				pcb.UVDistortionParam.BlendIntensity = renderState.BlendUVDistortionIntensity;
@@ -893,8 +893,8 @@ public:
 				pcb.MiscFlags[0] = m_renderer->GetImpl()->MaintainGammaColorInLinearColorSpace ? 1.0f : 0.0f;
 
 				pcb.FalloffParam.Enable = 0;
-				pcb.FlipbookParam.EnableInterpolation = static_cast<float>(renderState.EnableInterpolation);
-				pcb.FlipbookParam.InterpolationType = static_cast<float>(renderState.InterpolationType);
+				pcb.FlipbookParam.EnableInterpolation = static_cast<float>(renderState.Flipbook.EnableInterpolation);
+				pcb.FlipbookParam.InterpolationType = static_cast<float>(renderState.Flipbook.InterpolationType);
 
 				pcb.UVDistortionParam.Intensity = renderState.UVDistortionIntensity;
 				pcb.UVDistortionParam.BlendIntensity = renderState.BlendUVDistortionIntensity;
