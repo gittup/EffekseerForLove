@@ -505,15 +505,6 @@ void Shader::GetUniformIdList(int count, const ShaderUniformInfo* info, GLint* u
 void Shader::BeginScene()
 {
 	GLExt::glUseProgram(m_program);
-	for (size_t i = 0; i < m_aid.size(); i++)
-	{
-		if (m_aid[i] >= 0)
-		{
-			GLint enabled;
-			GLExt::glGetVertexAttribiv(m_aid[i], GL_VERTEX_ATTRIB_ARRAY_ENABLED, &enabled);
-			m_vertex_enabled.push_back(enabled);
-		}
-	}
 }
 
 void Shader::EndScene()
@@ -524,7 +515,6 @@ void Shader::EndScene()
 void Shader::EnableAttribs()
 {
 	GLCheckError();
-	m_vertex_enabled.clear();
 	for (size_t i = 0; i < m_aid.size(); i++)
 	{
 		if (m_aid[i] >= 0)
@@ -543,10 +533,7 @@ void Shader::DisableAttribs()
 	{
 		if (m_aid[i] >= 0)
 		{
-			if(!m_vertex_enabled[i])
-			{
-				GLExt::glDisableVertexAttribArray(m_aid[i]);
-			}
+			GLExt::glDisableVertexAttribArray(m_aid[i]);
 		}
 	}
 	GLCheckError();
