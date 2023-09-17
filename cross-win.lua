@@ -1,7 +1,7 @@
 cross_root = '/home/marf/cross-win'
 luajit_path = cross_root .. '/luajit'
-CC = 'x86_64-w64-mingw32-g++-posix'
-LD = 'x86_64-w64-mingw32-g++-posix'
+CC = 'x86_64-w64-mingw32-g++'
+LD = 'x86_64-w64-mingw32-g++'
 LDFLAGS += '-L' .. luajit_path
 LDFLAGS += '-shared'
 LDFLAGS += '-static'
