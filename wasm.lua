@@ -1,4 +1,4 @@
-CC = 'em++'
-AR = 'emar'
+CC = 'PYTHONDONTWRITEBYTECODE=1 em++'
+AR = 'PYTHONDONTWRITEBYTECODE=1 emar'
 CFLAGS += '-D__EFFEKSEER_RENDERER_GLES2__'
 CFLAGS += '-Wno-inconsistent-missing-override'
