@@ -3,6 +3,8 @@
 
 #include "../../Effekseer/Effekseer/Material/Effekseer.MaterialCompiler.h"
 
+#include <algorithm>
+
 #ifdef _WIN32
 #undef max
 #undef min
